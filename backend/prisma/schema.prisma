@@ -1,0 +1,668 @@
+// backend/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------
+// 1. ORGANIZATION MANAGEMENT (Multi-tenancy)
+// ---------------------------------------
+model Organization {
+  id                String   @id @default(uuid())
+  name              String
+  businessType      String?  // e.g., Retail, SaaS, Consult
+  currency          String   @default("USD")
+  timezone          String   @default("UTC")
+  taxId             String?
+  logoUrl           String?
+  address           Json?    // { street, city, state, zip, country }
+  contactEmail      String?
+  contactPhone      String?
+  website           String?
+  fiscalYearStart   String   @default("01-01") // MM-DD
+  
+  // Subscription Info
+  subscriptionPlan  SubscriptionPlan @default(FREE)
+  subscriptionStatus SubscriptionStatus @default(ACTIVE)
+  subscriptionExpiry DateTime?
+
+  // Relations
+  users             User[]
+  customers         Customer[]
+  vendors           Vendor[]
+  products          Product[]
+  invoices          Invoice[]
+  salesOrders       SalesOrder[]
+  quotations        Quotation[]
+  creditNotes       CreditNote[]
+  purchases         Purchase[]
+  expenses          Expense[]
+  payments          Payment[]
+  accounts          Account[]
+  journalEntries    JournalEntry[]
+  auditLogs         AuditLog[]
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([subscriptionStatus])
+}
+
+enum SubscriptionPlan {
+  FREE
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+  CANCELLED
+  PAST_DUE
+}
+
+// ---------------------------------------
+// 2. USER & ROLE MANAGEMENT
+// ---------------------------------------
+model User {
+  id              String   @id @default(uuid())
+  email           String   @unique // Global unique constraint for simpler auth
+  passwordHash    String
+  fullName        String
+  phone           String?
+  avatarUrl       String?
+  isVerified      Boolean  @default(false)
+  
+  // Multi-tenancy context
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  
+  role            UserRole @default(VIEWER)
+  status          UserStatus @default(ACTIVE)
+  
+  // Session / Auth
+  refreshToken    String?
+
+  auditLogs       AuditLog[] // Actions performed by user
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([email])
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  ACCOUNTANT
+  SALES
+  VIEWER
+}
+
+enum UserStatus {
+  ACTIVE
+  INVITED
+  SUSPENDED
+}
+
+// ---------------------------------------
+// 3. CRM (Customers & Vendors)
+// ---------------------------------------
+model Customer {
+  id              String   @id @default(uuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+
+  name            String
+  companyName     String?
+  email           String?
+  phone           String?
+  taxId           String?
+  currency        String   @default("USD")
+  
+  billingAddress  Json?
+  shippingAddress Json?
+  
+  paymentTerms    Int      @default(0) // Net 0, 15, 30
+  
+  // Relations
+  invoices        Invoice[]
+  quotations      Quotation[]
+  payments        Payment[]
+  creditNotes     CreditNote[]
+  salesOrders     SalesOrder[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([organizationId])
+}
+
+model Vendor {
+  id              String   @id @default(uuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+
+  name            String
+  companyName     String?
+  email           String?
+  phone           String?
+  taxId           String?
+  currency        String   @default("USD")
+  
+  billingAddress  Json?
+  
+  paymentTerms    Int      @default(0)
+  
+  // Relations
+  purchases       Purchase[]
+  expenses        Expense[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([organizationId])
+}
+
+// ---------------------------------------
+// 4. PRODUCT & INVENTORY
+// ---------------------------------------
+model Product {
+  id              String   @id @default(uuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+
+  name            String
+  sku             String?
+  type            ProductType // GOODS or SERVICE
+  description     String?
+  
+  sellingPrice    Decimal  @db.Decimal(10, 2)
+  purchasePrice   Decimal? @db.Decimal(10, 2)
+  
+  taxRate         Decimal  @default(0) @db.Decimal(5, 2)
+  
+  // Inventory
+  trackInventory  Boolean  @default(false)
+  stockOnInit     Decimal  @default(0)
+  stockAvailable  Decimal  @default(0)
+  lowStockAlert   Decimal? 
+  
+  // Accounting Mapping
+  salesAccountId      String? // Links to Chart of Accounts
+  purchaseAccountId   String?
+  inventoryAccountId  String?
+
+  invoiceItems    InvoiceItem[]
+  purchaseItems   PurchaseItem[]
+  quotationItems  QuotationItem[]
+  salesOrderItems SalesOrderItem[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([organizationId, sku]) // SKU unique per org
+  @@index([organizationId])
+}
+
+enum ProductType {
+  GOODS
+  SERVICE
+}
+
+// ---------------------------------------
+// 5. SALES MODULE (Quote -> Invoice)
+// ---------------------------------------
+model Quotation {
+  id              String   @id @default(uuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  
+  quotationNumber String
+  reference       String? // PO Number from customer
+  date            DateTime
+  expiryDate      DateTime?
+  
+  customerId      String
+  customer        Customer @relation(fields: [customerId], references: [id])
+  
+  status          QuoteStatus @default(DRAFT)
+  
+  subTotal        Decimal  @db.Decimal(15, 2)
+  taxTotal        Decimal  @db.Decimal(15, 2)
+  totalAmount     Decimal  @db.Decimal(15, 2)
+  discount        Decimal  @default(0) @db.Decimal(15, 2)
+  
+  items           QuotationItem[]
+  invoice         Invoice?  @relation(fields: [invoiceId], references: [id]) // converted to Invoice
+  invoiceId       String?   @unique
+
+  notes           String?
+  terms           String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([organizationId, quotationNumber])
+}
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  DECLINED
+  INVOICED
+}
+
+model QuotationItem {
+  id          String   @id @default(uuid())
+  quotationId String
+  quotation   Quotation @relation(fields: [quotationId], references: [id])
+  
+  productId   String?
+  product     Product?  @relation(fields: [productId], references: [id])
+  
+  description String
+  quantity    Decimal  @db.Decimal(10, 2)
+  unitPrice   Decimal  @db.Decimal(15, 2)
+  taxRate     Decimal  @db.Decimal(5, 2)
+  taxAmount   Decimal  @db.Decimal(15, 2)
+  total       Decimal  @db.Decimal(15, 2)
+}
+
+model SalesOrder {
+  id              String   @id @default(uuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+
+  orderNumber     String
+  date            DateTime
+
+  customerId      String
+  customer        Customer @relation(fields: [customerId], references: [id])
+
+  status          SalesOrderStatus @default(OPEN)
+
+  subTotal        Decimal  @db.Decimal(15, 2)
+  taxTotal        Decimal  @db.Decimal(15, 2)
+  totalAmount     Decimal  @db.Decimal(15, 2)
+
+  items           SalesOrderItem[] 
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([organizationId, orderNumber])
+}
+
+enum SalesOrderStatus {
+  OPEN
+  FULFILLED
+  CANCELLED
+}
+
+// Added SalesOrderItem Model
+model SalesOrderItem {
+  id            String      @id @default(uuid())
+  salesOrderId  String
+  salesOrder    SalesOrder  @relation(fields: [salesOrderId], references: [id])
+
+  productId     String?
+  product       Product?    @relation(fields: [productId], references: [id])
+
+  description   String
+  quantity      Decimal     @db.Decimal(10, 2)
+  unitPrice     Decimal     @db.Decimal(15, 2)
+  taxRate       Decimal     @db.Decimal(5, 2)
+  taxAmount     Decimal     @db.Decimal(15, 2)
+  total         Decimal     @db.Decimal(15, 2)
+}
+
+
+model Invoice {
+  id              String   @id @default(uuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  
+  invoiceNumber   String
+  reference       String?
+  date            DateTime
+  dueDate         DateTime
+
+  customerId      String
+  customer        Customer @relation(fields: [customerId], references: [id])
+
+  status          InvoiceStatus @default(DRAFT)
+  
+  subTotal        Decimal  @db.Decimal(15, 2)
+  taxTotal        Decimal  @db.Decimal(15, 2)
+  discount        Decimal  @default(0) @db.Decimal(15, 2)
+  totalAmount     Decimal  @db.Decimal(15, 2)
+  balanceDue      Decimal  @db.Decimal(15, 2)
+  
+  currency        String   @default("USD")
+  exchangeRate    Decimal  @default(1) @db.Decimal(10, 6)
+
+  items           InvoiceItem[]
+  payments        Payment[]
+  creditNotes     CreditNote[]
+
+  quotation       Quotation? 
+
+  journalEntryId  String?   // Link to accounting entry
+  journalEntry    JournalEntry? @relation(fields: [journalEntryId], references: [id]) 
+
+  notes           String?
+  terms           String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([organizationId, invoiceNumber])
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+  VOID
+}
+
+model InvoiceItem {
+  id          String   @id @default(uuid())
+  invoiceId   String
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id])
+  
+  productId   String?
+  product     Product? @relation(fields: [productId], references: [id])
+  
+  description String
+  quantity    Decimal  @db.Decimal(10, 2)
+  unitPrice   Decimal  @db.Decimal(15, 2)
+  taxRate     Decimal  @db.Decimal(5, 2)
+  taxAmount   Decimal  @db.Decimal(15, 2)
+  total       Decimal  @db.Decimal(15, 2)
+  
+  accountId   String?  // Revenue Account used for this line item
+  account     Account? @relation(fields: [accountId], references: [id])
+}
+
+model CreditNote {
+  id              String   @id @default(uuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  
+  creditNoteNumber String
+  date            DateTime
+  
+  customerId      String
+  customer        Customer @relation(fields: [customerId], references: [id])
+  
+  invoiceId       String?
+  invoice         Invoice?  @relation(fields: [invoiceId], references: [id])
+
+  totalAmount     Decimal  @db.Decimal(15, 2)
+  remainingBalance Decimal @db.Decimal(15, 2)
+  
+  status          CreditNoteStatus @default(OPEN)
+
+  journalEntryId  String?
+  journalEntry    JournalEntry? @relation(fields: [journalEntryId], references: [id])
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([organizationId, creditNoteNumber])
+}
+
+enum CreditNoteStatus {
+  OPEN
+  CLOSED
+  VOID
+}
+
+// ---------------------------------------
+// 6. PURCHASE MODULE
+// ---------------------------------------
+model Purchase {
+  id              String   @id @default(uuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  
+  billNumber      String
+  reference       String?
+  date            DateTime
+  dueDate         DateTime
+
+  vendorId        String
+  vendor          Vendor   @relation(fields: [vendorId], references: [id])
+
+  status          PurchaseStatus @default(OPEN)
+  
+  totalAmount     Decimal  @db.Decimal(15, 2)
+  balanceDue      Decimal  @db.Decimal(15, 2)
+  
+  items           PurchaseItem[]
+  payments        Payment[]
+
+  journalEntryId  String?
+  journalEntry    JournalEntry? @relation(fields: [journalEntryId], references: [id])
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([organizationId, billNumber])
+}
+
+enum PurchaseStatus {
+  OPEN
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+  VOID
+}
+
+model PurchaseItem {
+  id          String   @id @default(uuid())
+  purchaseId  String
+  purchase    Purchase @relation(fields: [purchaseId], references: [id])
+  
+  productId   String?
+  product     Product? @relation(fields: [productId], references: [id])
+  
+  description String
+  quantity    Decimal  @db.Decimal(10, 2)
+  unitPrice   Decimal  @db.Decimal(15, 2)
+  taxRate     Decimal  @db.Decimal(5, 2)
+  total       Decimal  @db.Decimal(15, 2)
+  
+  accountId   String?  // Expense/Asset Account
+  account     Account? @relation(fields: [accountId], references: [id])
+}
+
+model Expense {
+  id              String   @id @default(uuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  
+  date            DateTime
+  reference       String?
+  
+  vendorId        String?
+  vendor          Vendor?  @relation(fields: [vendorId], references: [id])
+  
+  amount          Decimal  @db.Decimal(15, 2)
+  taxAmount       Decimal  @default(0) @db.Decimal(15, 2)
+  
+  paidThroughAccountId String // Bank or Cash account
+  paidThroughAccount   Account @relation("PaidThrough", fields: [paidThroughAccountId], references: [id])
+  
+  expenseAccountId     String // Category (e.g., Travel, Meals)
+  expenseAccount       Account @relation("ExpenseCategory", fields: [expenseAccountId], references: [id])
+
+  receiptUrl      String?
+  
+  journalEntryId  String?
+  journalEntry    JournalEntry? @relation(fields: [journalEntryId], references: [id])
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// ---------------------------------------
+// 7. PAYMENTS
+// ---------------------------------------
+model Payment {
+  id              String   @id @default(uuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  
+  paymentNumber   String
+  date            DateTime
+  amount          Decimal  @db.Decimal(15, 2)
+  paymentMode     String   // Bank Transfer, Check, Credit Card, Cash
+  reference       String?  // Transaction ID
+  
+  type            PaymentType // RECEIVED or MADE
+
+  customerId      String?
+  customer        Customer? @relation(fields: [customerId], references: [id])
+  
+  vendorId        String?
+  vendor          Vendor?   @relation(fields: [vendorId], references: [id])
+
+  invoiceId       String?
+  invoice         Invoice?  @relation(fields: [invoiceId], references: [id])
+
+  purchaseId      String?
+  purchase        Purchase? @relation(fields: [purchaseId], references: [id])
+  
+  accountId       String   // Bank/Cash Account
+  account         Account  @relation(fields: [accountId], references: [id])
+
+  journalEntryId  String?
+  journalEntry    JournalEntry? @relation(fields: [journalEntryId], references: [id])
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+enum PaymentType {
+  RECEIVED
+  MADE
+}
+
+// ---------------------------------------
+// 8. ACCOUNTING ENGINE (Double Entry)
+// ---------------------------------------
+model Account {
+  id              String   @id @default(uuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  
+  code            String   // Account Code (e.g., 1000, 2000)
+  name            String   // Cash, Accounts Receivable
+  type            AccountType // ASSET, LIABILITY, EQUITY, REVENUE, EXPENSE
+  subType         String?  // Current Asset, Long Term Liability
+  
+  description     String?
+  
+  isSystem        Boolean  @default(false) // Cannot be deleted if true
+  isActive        Boolean  @default(true)
+  
+  balance         Decimal  @default(0) @db.Decimal(15, 2) // Cached balance
+
+  // Relations
+  journalLines    JournalEntryLine[]
+  invoiceItems    InvoiceItem[]
+  purchaseItems   PurchaseItem[]
+  payments        Payment[]
+  expensesPaid    Expense[] @relation("PaidThrough")
+  expensesCat     Expense[] @relation("ExpenseCategory")
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([organizationId, code])
+  @@unique([organizationId, name])
+}
+
+enum AccountType {
+  ASSET
+  LIABILITY
+  EQUITY
+  REVENUE
+  EXPENSE
+}
+
+model JournalEntry {
+  id              String   @id @default(uuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  
+  entryNumber     String
+  date            DateTime
+  reference       String?
+  description     String?
+  
+  lines           JournalEntryLine[]
+  
+  // Link to source document
+  invoice         Invoice?
+  purchase        Purchase?
+  payment         Payment?
+  creditNote      CreditNote?
+  expense         Expense?
+
+  postedBy        String? // User ID
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([organizationId, entryNumber])
+}
+
+model JournalEntryLine {
+  id              String   @id @default(uuid())
+  journalEntryId  String
+  journalEntry    JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+  
+  accountId       String
+  account         Account  @relation(fields: [accountId], references: [id])
+  
+  debit           Decimal  @default(0) @db.Decimal(15, 2)
+  credit          Decimal  @default(0) @db.Decimal(15, 2)
+  
+  description     String?
+
+  @@index([accountId])
+}
+
+// ---------------------------------------
+// 9. AUDIT & LOGS
+// ---------------------------------------
+model AuditLog {
+  id              String   @id @default(uuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  
+  userId          String?
+  user            User?    @relation(fields: [userId], references: [id])
+  
+  action          String   // CREATE, UPDATE, DELETE, LOGIN
+  entity          String   // Invoice, User, Settings
+  entityId        String?
+  details         Json?    // Previous vs New values
+  ipAddress       String?
+  
+  createdAt       DateTime @default(now())
+}

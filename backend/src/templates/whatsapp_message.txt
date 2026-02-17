@@ -1,0 +1,10 @@
+Hello *{{customerName}}*,
+
+This is a message from *{{organizationName}}*.
+
+Your invoice *#{{invoiceNumber}}* for *{{currency}} {{totalAmount}}* is due on *{{dueDate}}*.
+
+You can view and pay your invoice using the link below:
+{{paymentLink}}
+
+Thank you for your business!
