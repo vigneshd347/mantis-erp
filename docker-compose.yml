@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  # ---------------------------------------
+  # FRONTEND (Next.js)
+  # ---------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: manti_frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    restart: always
+
+  # ---------------------------------------
+  # BACKEND (Node/Express)
+  # ---------------------------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: manti_backend
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - DATABASE_URL=postgresql://user:password@postgres:5432/manti_erp?schema=public
+      - JWT_SECRET=change_this_secret
+      # Wait for DB to be healthy
+    depends_on:
+      postgres:
+        condition: service_started
+    restart: unless-stopped
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/prisma:/app/prisma
+
+  # ---------------------------------------
+  # POSTGRES DATABASE
+  # ---------------------------------------
+  postgres:
+    image: postgres:15-alpine
+    container_name: manti_postgres
+    restart: always
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=manti_erp
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # ---------------------------------------
+  # PGADMIN (DB GUI)
+  # ---------------------------------------
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: manti_pgadmin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
+      - PGADMIN_DEFAULT_PASSWORD=admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
