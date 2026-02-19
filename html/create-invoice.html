@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Invoice - Manti ERP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap');
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            background-color: #f3f4f6;
+        }
+
+        :root {
+            --manti-blue: #2A2C7A;
+            --manti-dark: #414142;
+        }
+
+        .bg-manti-blue {
+            background-color: var(--manti-blue);
+        }
+
+        .text-manti-blue {
+            color: var(--manti-blue);
+        }
+
+        .bg-manti-orange-gradient {
+            background: linear-gradient(90deg, #df2726 0%, #e63e2e 42%, #f2673d 100%);
+        }
+
+        .text-manti-orange {
+            color: #df2726;
+        }
+
+        .border-manti-orange {
+            border-color: #df2726;
+        }
+
+        .bg-manti-dark {
+            background-color: var(--manti-dark);
+        }
+
+        .print-only {
+            display: none;
+        }
+
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+
+            .print-only {
+                display: block !important;
+            }
+
+            body {
+                background: white;
+            }
+
+            #invoice-content {
+                box-shadow: none;
+                border: none;
+                margin: 0;
+                width: 100%;
+            }
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid #9CA3AF;
+            border-collapse: collapse;
+        }
+
+        th {
+            border: 1px solid white;
+        }
+    </style>
+</head>
+
+<body class="text-gray-900 text-xs">
+
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-slate-900 text-white hidden md:flex flex-col no-print">
+            <div class="p-6 border-b border-slate-800">
+                <a href="dashboard.html" class="text-xl font-bold tracking-widest text-amber-500 uppercase">MANTI
+                    ERP</a>
+            </div>
+            <nav class="flex-1 px-4 py-4 space-y-2">
+                <a href="dashboard.html"
+                    class="flex items-center px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800"><span
+                        class="mr-3">📊</span> Dashboard</a>
+                <a href="sales.html"
+                    class="flex items-center px-4 py-3 rounded-lg bg-slate-800 text-white font-medium border-l-4 border-amber-500"><span
+                        class="mr-3">🧾</span> New Invoice</a>
+                <a href="products.html"
+                    class="flex items-center px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800"><span
+                        class="mr-3">💍</span> Products</a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto p-4 md:p-8">
+            <div class="max-w-[210mm] mx-auto">
+                <div class="flex justify-between items-center mb-6 no-print">
+                    <h1 class="text-2xl font-bold text-gray-800">New Sales Invoice</h1>
+                    <div class="space-x-2">
+                        <button onclick="window.history.back()"
+                            class="px-4 py-2 bg-gray-200 text-gray-700 rounded">Cancel</button>
+                        <button onclick="window.print()"
+                            class="px-4 py-2 bg-indigo-600 text-white rounded shadow-lg">Print Invoice</button>
+                    </div>
+                </div>
+
+                <!-- Invoice Template -->
+                <div id="invoice-content" class="bg-white shadow-xl min-h-[297mm] relative flex flex-col">
+
+                    <!-- Header Section -->
+                    <div class="relative w-full h-[240px]">
+
+                        <!-- Logo (Left) -->
+                        <!-- Logo Removed -->
+                        <div class="absolute left-8 top-2 w-40 z-10 flex justify-center">
+                            <!-- <img src="images/logo.svg" class="w-32 h-auto" alt="Manti Jewel Art"> -->
+                        </div>
+
+                        <!-- Top Right: TAX INVOICE Title -->
+                        <div class="absolute right-8 top-6 text-right z-10">
+                            <h2 class="text-4xl font-black text-manti-blue tracking-wide">TAX INVOICE</h2>
+                        </div>
+
+                        <!-- Stacked Bars Layout -->
+                        <div class="absolute top-[0px] w-full h-full z-0 pointer-events-none">
+
+                            <!-- Orange Bar (Address) - Right Side -->
+                            <!-- Slant: / (Matching diagonal line with Blue) -->
+                            <div class="absolute right-0 top-[90px] h-[80px] w-[55%] bg-manti-orange-gradient text-white flex items-center justify-end pl-8 pr-12 z-10"
+                                style="clip-path: polygon(35% 0, 100% 0, 100% 100%, 7% 100%);">
+                                <div
+                                    class="flex flex-col text-[10px] leading-tight font-semibold text-right w-full pt-2">
+                                    <div class="mb-1">
+                                        No. 12/189, Prv Complex, Vannan Kovil Junction,<br>Mettupalayam Rd, Coimbatore,
+                                        Tamil Nadu - 641047.
+                                    </div>
+                                    <div class="flex justify-end items-center">
+                                        <span class="mr-1">📞</span>
+                                        <span>+91 90927 27655</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Blue Bar (Company Name) - Left Side -->
+                            <!-- Slant: / (Interlocks with Orange) -->
+                            <div class="absolute left-0 top-[120px] h-[50px] w-[60%] bg-manti-blue text-white flex items-center pl-8 z-20"
+                                style="clip-path: polygon(0 0, 100% 0, 85% 100%, 0% 100%);">
+                                <h1 class="text-xl font-bold tracking-wider uppercase">MANTI JEWEL ART PRIVATE LIMITED
+                                </h1>
+                            </div>
+
+                            <!-- GSTIN Strip (Orange) - Below Blue Bar -->
+                            <!-- Slant: / (Continues the line) -->
+                            <div class="absolute left-0 top-[170px] h-[30px] w-[50%] bg-manti-orange-gradient text-white flex items-center pl-8 z-10"
+                                style="clip-path: polygon(0 0, 100% 0, 88% 100%, 0% 100%);">
+                                <span class="font-bold tracking-wide text-[11px]">GSTIN : 33AAUCM3607L1Z3</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Details Grid -->
+                    <div class="flex justify-between px-8 py-4 mt-2">
+                        <!-- Left Column (Bill/Ship) -->
+                        <div class="w-[48%] space-y-4">
+                            <!-- Bill To -->
+                            <div>
+                                <h3
+                                    class="font-bold text-manti-blue mb-1 border-b border-manti-orange inline-block w-full">
+                                    Bill To</h3>
+                                <div class="grid grid-cols-[60px_10px_1fr] gap-0 text-gray-800 font-medium">
+                                    <div>Name</div>
+                                    <div>:</div>
+                                    <input type="text" id="billName" value="Customer Name"
+                                        class="w-full bg-transparent border-none p-0 h-4 focus:ring-0"
+                                        placeholder="Customer Name">
+
+                                    <div>Address</div>
+                                    <div>:</div>
+                                    <textarea id="billAddress" rows="2"
+                                        class="w-full bg-transparent border-none p-0 resize-none leading-tight focus:ring-0"
+                                        placeholder="Address">Address</textarea>
+
+                                    <div>Mobile</div>
+                                    <div>:</div>
+                                    <input type="text" id="billMobile"
+                                        class="w-full bg-transparent border-none p-0 h-4 focus:ring-0"
+                                        placeholder="Mobile">
+
+                                    <div>Email</div>
+                                    <div>:</div>
+                                    <input type="email" id="billEmail"
+                                        class="w-full bg-transparent border-none p-0 h-4 focus:ring-0"
+                                        placeholder="Email">
+
+                                    <div>State</div>
+                                    <div>:</div>
+                                    <input type="text" id="billState" value="Tamil Nadu"
+                                        class="w-full bg-transparent border-none p-0 h-4 focus:ring-0">
+
+                                    <div>GSTIN</div>
+                                    <div>:</div>
+                                    <input type="text" id="billGst"
+                                        class="w-full bg-transparent border-none p-0 h-4 focus:ring-0"
+                                        placeholder="GSTIN">
+                                </div>
+                            </div>
+
+                            <!-- Ship To -->
+                            <div>
+                                <div class="flex items-center justify-between border-b border-manti-orange mb-1">
+                                    <h3 class="font-bold text-manti-blue">Ship To</h3>
+                                    <label class="flex items-center space-x-1 cursor-pointer">
+                                        <input type="checkbox" id="sameAsBill" onchange="copyBillToShip()"
+                                            class="w-3 h-3 text-manti-blue rounded focus:ring-0">
+                                        <span class="text-[9px] font-bold text-gray-600">Same as Bill To</span>
+                                    </label>
+                                </div>
+                                <div class="grid grid-cols-[60px_10px_1fr] gap-0 text-gray-800 font-medium">
+                                    <div>Name</div>
+                                    <div>:</div>
+                                    <input type="text" id="shipName"
+                                        class="w-full bg-transparent border-none p-0 h-4 focus:ring-0">
+
+                                    <div>Address</div>
+                                    <div>:</div>
+                                    <textarea id="shipAddress" rows="2"
+                                        class="w-full bg-transparent border-none p-0 resize-none leading-tight focus:ring-0"></textarea>
+
+                                    <div>Mobile</div>
+                                    <div>:</div>
+                                    <input type="text" id="shipMobile"
+                                        class="w-full bg-transparent border-none p-0 h-4 focus:ring-0">
+
+                                    <div>Email</div>
+                                    <div>:</div>
+                                    <input type="email" id="shipEmail"
+                                        class="w-full bg-transparent border-none p-0 h-4 focus:ring-0">
+
+                                    <div>State</div>
+                                    <div>:</div>
+                                    <input type="text" id="shipState" value="Tamil Nadu"
+                                        class="w-full bg-transparent border-none p-0 h-4 focus:ring-0">
+
+                                    <div>GSTIN</div>
+                                    <div>:</div>
+                                    <input type="text" id="shipGst"
+                                        class="w-full bg-transparent border-none p-0 h-4 focus:ring-0">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Column (Invoice Details) -->
+                        <div class="w-[45%] pl-4">
+                            <div class="grid grid-cols-[100px_10px_1fr] gap-y-1 text-gray-800 font-medium">
+                                <div class="font-bold"># Inv. No</div>
+                                <div>:</div>
+                                <input type="text" value="INV-00123" id="invNo" oninput="updateQRCode()"
+                                    class="font-bold bg-transparent border-none p-0 h-4 focus:ring-0">
+
+                                <div class="font-bold">Inv. Date</div>
+                                <div>:</div>
+                                <input type="text" value="18/02/2026"
+                                    class="bg-transparent border-none p-0 h-4 focus:ring-0">
+
+                                <div class="font-bold">Payment Mode</div>
+                                <div>:</div>
+                                <select
+                                    class="bg-transparent border-none p-0 h-5 focus:ring-0 w-full text-xs font-medium">
+                                    <option value="Cash">Cash</option>
+                                    <option value="UPI">UPI</option>
+                                    <option value="Card">Card</option>
+                                    <option value="Bank Transfer">Bank Transfer</option>
+                                </select>
+                            </div>
+
+                            <div class="h-px bg-manti-orange w-full my-3"></div>
+
+                            <div class="grid grid-cols-[100px_10px_1fr] gap-y-1 text-gray-800 font-medium">
+                                <div class="font-bold">Transport Mode</div>
+                                <div>:</div>
+                                <select id="transportMode" onchange="toggleTransportFields()"
+                                    class="bg-transparent border-none p-0 h-5 focus:ring-0 w-full text-xs font-medium">
+                                    <option value="Self">Self</option>
+                                    <option value="Parcel Service">Parcel Service</option>
+                                </select>
+
+                                <div class="font-bold">Buyer's Order No</div>
+                                <div>:</div>
+                                <input type="text" class="bg-transparent border-none p-0 h-4 focus:ring-0">
+
+                                <div class="font-bold">Supplier's Ref.</div>
+                                <div>:</div>
+                                <input type="text" class="bg-transparent border-none p-0 h-4 focus:ring-0">
+
+                                <div class="font-bold">Vehicle Number</div>
+                                <div>:</div>
+                                <input type="text" id="vehicleNo"
+                                    class="bg-transparent border-none p-0 h-4 focus:ring-0 transition-colors duration-300">
+
+                                <div class="font-bold">Delivery Date</div>
+                                <div>:</div>
+                                <input type="text" value="dd/mm/yyyy"
+                                    class="bg-transparent border-none p-0 h-4 focus:ring-0">
+
+                                <div class="font-bold">Transport Details</div>
+                                <div>:</div>
+                                <input type="text" id="transportDetails"
+                                    class="bg-transparent border-none p-0 h-4 focus:ring-0 transition-colors duration-300">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Items Table -->
+                    <div class="px-8 mt-2 flex-grow flex flex-col relative z-20">
+                        <table class="w-full border-collapse text-[11px]">
+                            <thead>
+                                <tr class="bg-manti-dark text-white h-9">
+                                    <th class="w-8">Sr</th>
+                                    <th class="w-24 pl-2">Type</th>
+                                    <th class="text-left pl-2">Goods & Service Discription</th>
+                                    <th class="w-16">Weight</th>
+                                    <th class="w-16">MC</th>
+                                    <th class="w-14">HSN</th>
+                                    <th class="w-14">Qty</th>
+                                    <th class="w-20">Rate</th>
+                                    <!-- REMOVED TAXABLE COLUMN -->
+                                    <!-- REMOVED GST COLUMN -->
+                                    <th class="w-28">Total</th>
+                                    <th class="w-6 no-print bg-white border-0"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="invoiceItems">
+                                <tr class="h-8 align-top">
+                                    <td class="text-center py-1 font-bold">1</td>
+                                    <td class="pl-2 py-1">
+                                        <select
+                                            class="w-full bg-transparent font-medium text-[10px] focus:outline-none">
+                                            <option value="pure_gold">Pure Gold</option>
+                                            <option value="pure_silver">Pure Silver</option>
+                                            <option value="gold_22k">Gold (22K)</option>
+                                            <option value="silver_925">Silver (925)</option>
+                                        </select>
+                                    </td>
+                                    <td class="pl-2 py-1">
+                                        <select class="w-full bg-transparent font-bold focus:outline-none"
+                                            onchange="updateRow(this)">
+                                            <option value="">Select Item</option>
+                                            <option value="gold_chain" data-rate="5850" data-mc="12"
+                                                data-mc-type="percent" selected>Select Item</option>
+                                            <option value="gold_chain_real" data-rate="5850" data-mc="12"
+                                                data-mc-type="percent">Gold Chain 22k</option>
+                                        </select>
+                                    </td>
+                                    <td class="text-center py-1">
+                                        <input type="number"
+                                            class="w-full text-center bg-transparent border-b border-gray-300 weight"
+                                            value="0" oninput="calculate(this)">
+                                    </td>
+                                    <td class="text-center py-1 relative group">
+                                        <input type="number"
+                                            class="w-full text-center bg-transparent border-b border-gray-300 mc"
+                                            value="0" oninput="calculate(this)">
+                                        <span
+                                            class="absolute top-[-10px] right-0 text-[10px] text-gray-500 mc-type font-bold"></span>
+                                    </td>
+                                    <td class="text-center py-1">7113</td>
+                                    <td class="text-center py-1"><input type="number"
+                                            class="w-full text-center bg-transparent qty" value="1"
+                                            oninput="calculate(this)"></td>
+                                    <td class="text-right pr-1 py-1"><input type="number"
+                                            class="w-full text-right bg-transparent rate" oninput="calculate(this)">
+                                    </td>
+                                    <!-- REMOVED TAXABLE CELL -->
+                                    <!-- REMOVED GST CELL -->
+                                    <td class="text-right pr-1 py-1 font-bold total">0.00</td>
+                                    <td class="text-center no-print border-0"><button onclick="removeRow(this)"
+                                            class="text-red-500 font-bold">&times;</button></td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr class="font-bold bg-gray-50 h-8">
+                                    <td colspan="7" class="text-right pr-2">Sub-Total:</td>
+                                    <!-- REMOVED TAXABLE SUBSUMMARY CELL -->
+                                    <!-- REMOVED GST SUBSUMMARY CELL -->
+                                    <td class="text-right pr-2" id="subTotalTotal">0.00</td>
+                                    <td class="no-print border-0"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                        <button onclick="addRow()"
+                            class="mt-2 text-blue-600 underline text-xs font-bold no-print self-start">+ Add
+                            Item</button>
+
+                        <!-- Watermark -->
+                        <!-- Watermark Restored -->
+                        <div
+                            class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.10] z-0 mt-32">
+                            <img src="images/lion-logo.png" class="w-[450px] h-[450px]">
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="px-8 mt-auto w-full">
+                        <div class="flex justify-between items-start pt-2 border-t border-gray-800 mt-4">
+                            <!-- Bank Details -->
+                            <div class="w-[45%] flex space-x-4">
+                                <div>
+                                    <h4 class="font-bold text-manti-blue text-sm uppercase mb-1">Our Bank Details</h4>
+                                    <div
+                                        class="grid grid-cols-[80px_10px_1fr] gap-y-0 text-gray-800 font-medium leading-relaxed">
+                                        <div>Bank Name</div>
+                                        <div>:</div>
+                                        <div>IDFC FIRST</div>
+                                        <div>Branch</div>
+                                        <div>:</div>
+                                        <div>POLLACHI BRANCH</div>
+                                        <div>Account No</div>
+                                        <div>:</div>
+                                        <div>70008000727</div>
+                                        <div>IFSC Code</div>
+                                        <div>:</div>
+                                        <div>IDFB0080538</div>
+                                        <div>UPI ID</div>
+                                        <div>:</div>
+                                        <div>mantijwewlartpvt@idfcbank</div>
+                                    </div>
+                                    <div class="mt-2 text-xs border-t border-gray-300 pt-1">
+                                        <span class="font-bold">Invoice Total in Word :</span><br>
+                                        <span class="italic font-bold text-sm text-manti-blue" id="amountInWords">Zero
+                                            Rupees Only</span>
+                                    </div>
+                                </div>
+                                <!-- QR Code Container -->
+                                <div id="qrCodeContainer" class="flex flex-col items-center justify-center pt-2">
+                                    <div id="qrcode" class="mb-1 p-1 bg-white border border-gray-200"></div>
+                                    <span class="text-[9px] font-bold text-manti-blue uppercase tracking-wide">Scan to
+                                        Pay</span>
+                                </div>
+                            </div>
+
+                            <!-- Summary -->
+                            <div class="w-[40%] flex flex-col items-end">
+                                <h4 class="font-bold text-manti-blue text-sm uppercase mb-1 w-full text-right">Summery
+                                </h4>
+                                <div
+                                    class="grid grid-cols-[1fr_10px_80px] gap-y-1 w-full text-right text-gray-800 font-medium">
+                                    <div>CGST Amt</div>
+                                    <div>:</div>
+                                    <div id="cgstTotal">0.00</div>
+                                    <div>SGST Amt</div>
+                                    <div>:</div>
+                                    <div id="sgstTotal">0.00</div>
+                                    <div>IGST Amt</div>
+                                    <div>:</div>
+                                    <div>-</div>
+                                    <div>Freight Packing Charges</div>
+                                    <div>:</div>
+                                    <div>0.00</div>
+                                    <div>Round off</div>
+                                    <div>:</div>
+                                    <div>0.00</div>
+                                    <div class="col-span-3 border-t border-gray-800 my-1"></div>
+                                    <div class="font-bold text-manti-blue">Total Amount</div>
+                                    <div>:</div>
+                                    <div class="font-bold text-manti-blue text-sm" id="grandTotal">0.00</div>
+                                </div>
+
+                                <div class="mt-8 text-center w-full">
+                                    <p class="text-[10px] font-bold">For, MANTI JEWEL ART PRIVATE LIMITED</p>
+                                    <div class="h-10"></div>
+                                    <p class="text-[10px]">Authorised Signatory</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer Bar -->
+                    <div
+                        class="bg-manti-orange-gradient text-white text-center py-1 mt-2 font-bold tracking-widest text-[10px]">
+                        Thank You For Business With US!
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Logic Script -->
+    <script>
+        function copyBillToShip() {
+            if (document.getElementById('sameAsBill').checked) {
+                document.getElementById('shipName').value = document.getElementById('billName').value;
+                document.getElementById('shipAddress').value = document.getElementById('billAddress').value;
+                document.getElementById('shipMobile').value = document.getElementById('billMobile').value;
+                document.getElementById('shipEmail').value = document.getElementById('billEmail').value;
+                document.getElementById('shipState').value = document.getElementById('billState').value;
+                document.getElementById('shipGst').value = document.getElementById('billGst').value;
+            } else {
+                document.getElementById('shipName').value = '';
+                document.getElementById('shipName').value = '';
+                document.getElementById('shipAddress').value = '';
+                document.getElementById('shipMobile').value = '';
+                document.getElementById('shipEmail').value = '';
+                document.getElementById('shipGst').value = '';
+            }
+        }
+
+        function toggleTransportFields() {
+            const mode = document.getElementById('transportMode').value;
+            const vehicleInput = document.getElementById('vehicleNo');
+            const detailsInput = document.getElementById('transportDetails');
+
+            if (mode === 'Parcel Service') {
+                vehicleInput.placeholder = 'Required';
+                vehicleInput.classList.add('bg-red-50');
+                detailsInput.placeholder = 'Required';
+                detailsInput.classList.add('bg-red-50');
+            } else {
+                vehicleInput.placeholder = '';
+                vehicleInput.classList.remove('bg-red-50');
+                detailsInput.placeholder = '';
+                detailsInput.classList.remove('bg-red-50');
+            }
+        }
+
+        function updateRow(select) {
+            const row = select.closest('tr');
+            const option = select.options[select.selectedIndex];
+            const rate = parseFloat(option.dataset.rate) || 0;
+            const mc = parseFloat(option.dataset.mc) || 0;
+            const mcType = option.dataset.mcType || 'fixed';
+
+            row.querySelector('.rate').value = rate;
+            row.querySelector('.mc').value = mc;
+            row.dataset.mcType = mcType;
+            row.querySelector('.mc-type').innerText = mcType === 'percent' ? '%' : '₹';
+
+            calculate(select);
+        }
+
+        function calculate(element) {
+            const row = element.closest('tr');
+            const qty = parseFloat(row.querySelector('.qty').value) || 0;
+            const weight = parseFloat(row.querySelector('.weight').value) || 0;
+            const rate = parseFloat(row.querySelector('.rate').value) || 0;
+            const mc = parseFloat(row.querySelector('.mc').value) || 0;
+            const mcType = row.dataset.mcType || 'fixed';
+
+            let baseValue = weight > 0 ? rate * weight : rate;
+
+            let mcAmount = 0;
+            if (mcType === 'percent') {
+                mcAmount = baseValue * (mc / 100);
+            } else {
+                // Fixed logic: usually MC is per gram if weight exists
+                mcAmount = weight > 0 ? mc * weight : mc;
+            }
+
+            const taxable = (baseValue + mcAmount) * qty;
+            const total = taxable;
+
+            row.querySelector('.total').innerText = total.toFixed(2);
+            calculateTotals();
+        }
+
+        function calculateTotals() {
+            let grandTotal = 0;
+            document.querySelectorAll('#invoiceItems tr').forEach(row => {
+                grandTotal += parseFloat(row.querySelector('.total').innerText) || 0;
+            });
+
+            document.getElementById('subTotalTotal').innerText = grandTotal.toFixed(2);
+
+            // Tax Calculation for Summary (3% GST on Total)
+            const totalGst = grandTotal * 0.03;
+            const roundedTotal = Math.round(grandTotal + totalGst);
+
+            document.getElementById('cgstTotal').innerText = (totalGst / 2).toFixed(2);
+            document.getElementById('sgstTotal').innerText = (totalGst / 2).toFixed(2);
+            document.getElementById('grandTotal').innerText = '₹ ' + roundedTotal.toFixed(2);
+
+            // Update Words
+            document.getElementById('amountInWords').innerText = numberToWords(roundedTotal) + " Only";
+
+            // Update QR Code
+            updateQRCode();
+        }
+
+        function updateQRCode() {
+            const totalText = document.getElementById('grandTotal').innerText.replace('₹ ', '').trim();
+            const total = parseFloat(totalText) || 0;
+            const invNo = document.getElementById('invNo').value || "INV-00123";
+
+            const upiId = "mantijwewlartpvt@idfcbank";
+            const name = "MANTI JEWEL ART PRIVATE LIMITED";
+            const note = `Invoice ${invNo}`;
+
+            const url = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${total.toFixed(2)}&cu=INR&tn=${encodeURIComponent(note)}`;
+
+            const container = document.getElementById('qrcode');
+            container.innerHTML = "";
+
+            if (typeof QRCode !== 'undefined') {
+                new QRCode(container, {
+                    text: url,
+                    width: 100,
+                    height: 100,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+            }
+        }
+
+        function addRow() {
+            const tbody = document.getElementById('invoiceItems');
+            const newRow = tbody.rows[0].cloneNode(true);
+            newRow.querySelectorAll('input').forEach(i => i.value = '');
+            newRow.querySelector('.qty').value = 1;
+            newRow.querySelector('.weight').value = 0;
+            newRow.querySelector('.mc').value = 0;
+            newRow.cells[0].innerText = tbody.rows.length + 1;
+            tbody.appendChild(newRow);
+        }
+
+        function removeRow(btn) {
+            if (document.querySelectorAll('#invoiceItems tr').length > 1) {
+                btn.closest('tr').remove();
+                calculateTotals();
+                document.querySelectorAll('#invoiceItems tr').forEach((r, i) => r.cells[0].innerText = i + 1);
+            }
+        }
+
+        function numberToWords(num) {
+            if (num === 0) return "Zero Rupees";
+
+            const a = ['', 'One ', 'Two ', 'Three ', 'Four ', 'Five ', 'Six ', 'Seven ', 'Eight ', 'Nine ', 'Ten ', 'Eleven ', 'Twelve ', 'Thirteen ', 'Fourteen ', 'Fifteen ', 'Sixteen ', 'Seventeen ', 'Eighteen ', 'Nineteen '];
+            const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+            const n = ('000000000' + num).substr(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
+            if (!n) return "";
+
+            let str = "";
+            str += (n[1] != 0) ? (a[Number(n[1])] || b[n[1][0]] + ' ' + a[n[1][1]]) + 'Crore ' : '';
+            str += (n[2] != 0) ? (a[Number(n[2])] || b[n[2][0]] + ' ' + a[n[2][1]]) + 'Lakh ' : '';
+            str += (n[3] != 0) ? (a[Number(n[3])] || b[n[3][0]] + ' ' + a[n[3][1]]) + 'Thousand ' : '';
+            str += (n[4] != 0) ? (a[Number(n[4])] || b[n[4][0]] + ' ' + a[n[4][1]]) + 'Hundred ' : '';
+            str += (n[5] != 0) ? ((str != '') ? 'and ' : '') + (a[Number(n[5])] || b[n[5][0]] + ' ' + a[n[5][1]]) + '' : '';
+
+            return str + "Rupees";
+        }
+
+        window.onload = updateQRCode;
+    </script>
+</body>
+
+</html>

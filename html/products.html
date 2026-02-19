@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Products - Manti ERP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 font-sans">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-slate-900 text-white hidden md:flex flex-col">
+            <div class="p-6 border-b border-slate-800">
+                <a href="dashboard.html" class="text-xl font-bold tracking-widest text-amber-500 uppercase">MANTI
+                    ERP</a>
+            </div>
+            <nav class="flex-1 px-4 py-4 space-y-2">
+                <a href="dashboard.html"
+                    class="flex items-center px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">
+                    <span class="mr-3">📊</span> Dashboard
+                </a>
+                <a href="sales.html"
+                    class="flex items-center px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">
+                    <span class="mr-3">🧾</span> Sales & Invoices
+                </a>
+                <a href="products.html"
+                    class="flex items-center px-4 py-3 rounded-lg bg-slate-800 text-white font-medium border-l-4 border-amber-500">
+                    <span class="mr-3">💍</span> Products
+                </a>
+                <a href="customers.html"
+                    class="flex items-center px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">
+                    <span class="mr-3">👥</span> Customers
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Content -->
+        <main class="flex-1 overflow-y-auto p-8">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">Product Inventory</h1>
+                    <p class="text-sm text-gray-500">Manage Gold, Silver & Diamond Stock</p>
+                </div>
+                <a href="add-product.html"
+                    class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded shadow-lg flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Add Product
+                </a>
+            </div>
+
+            <!-- Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div class="bg-white p-4 rounded-lg shadow border-l-4 border-amber-500">
+                    <p class="text-gray-500 text-sm font-medium">Total Gold Stock</p>
+                    <p class="text-xl font-bold text-gray-800">1,250.50 g</p>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow border-l-4 border-gray-400">
+                    <p class="text-gray-500 text-sm font-medium">Total Silver Stock</p>
+                    <p class="text-xl font-bold text-gray-800">5,400.00 g</p>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500">
+                    <p class="text-gray-500 text-sm font-medium">Total Items</p>
+                    <p class="text-xl font-bold text-gray-800">142 SKUs</p>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Product Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Type</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Purity</th>
+                            <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase">Stock (Qty)</th>
+                            <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase">Weight (g)</th>
+                            <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase">Making Charges
+                            </th>
+                            <th class="px-6 py-3"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 text-sm font-medium text-gray-900">Gold Ring (Men's Classic)</td>
+                            <td class="px-6 py-4 text-sm text-gray-500">Gold</td>
+                            <td class="px-6 py-4 text-sm text-gray-500"><span
+                                    class="px-2 py-1 bg-amber-100 text-amber-800 rounded-full text-xs">22k</span></td>
+                            <td class="px-6 py-4 text-sm text-gray-900 text-right font-bold">12</td>
+                            <td class="px-6 py-4 text-sm text-gray-500 text-right">5.500</td>
+                            <td class="px-6 py-4 text-sm text-gray-500 text-right">₹500.00</td>
+                            <td class="px-6 py-4 text-right text-sm font-medium">
+                                <a href="#" class="text-indigo-600 hover:text-indigo-900">Edit</a>
+                            </td>
+                        </tr>
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 text-sm font-medium text-gray-900">Gold Chain (Rope Design)</td>
+                            <td class="px-6 py-4 text-sm text-gray-500">Gold</td>
+                            <td class="px-6 py-4 text-sm text-gray-500"><span
+                                    class="px-2 py-1 bg-amber-100 text-amber-800 rounded-full text-xs">22k</span></td>
+                            <td class="px-6 py-4 text-sm text-gray-900 text-right font-bold">5</td>
+                            <td class="px-6 py-4 text-sm text-gray-500 text-right">12.200</td>
+                            <td class="px-6 py-4 text-sm text-gray-500 text-right">₹1,200.00</td>
+                            <td class="px-6 py-4 text-right text-sm font-medium">
+                                <a href="#" class="text-indigo-600 hover:text-indigo-900">Edit</a>
+                            </td>
+                        </tr>
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 text-sm font-medium text-gray-900">Silver Anklets</td>
+                            <td class="px-6 py-4 text-sm text-gray-500">Silver</td>
+                            <td class="px-6 py-4 text-sm text-gray-500"><span
+                                    class="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">925</span></td>
+                            <td class="px-6 py-4 text-sm text-gray-900 text-right font-bold">50</td>
+                            <td class="px-6 py-4 text-sm text-gray-500 text-right">25.000</td>
+                            <td class="px-6 py-4 text-sm text-gray-500 text-right">₹250.00</td>
+                            <td class="px-6 py-4 text-right text-sm font-medium">
+                                <a href="#" class="text-indigo-600 hover:text-indigo-900">Edit</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+</body>
+
+</html>
