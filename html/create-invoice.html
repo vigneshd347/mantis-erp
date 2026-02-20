@@ -7,6 +7,8 @@
     <title>Create Invoice - Manti ERP</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap');
 
@@ -81,6 +83,166 @@
         th {
             border: 1px solid white;
         }
+
+        /* Modal styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-box {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 420px;
+            width: 90%;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+            animation: modalIn 0.3s ease;
+        }
+
+        @keyframes modalIn {
+            from {
+                transform: scale(0.9);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            z-index: 99999;
+            animation: toastIn 0.3s ease, toastOut 0.3s ease 2.7s;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        /* PAID Stamp */
+        .paid-stamp {
+            border: 4px solid #ef4444;
+            color: #ef4444;
+            font-size: 24px;
+            font-weight: 900;
+            padding: 4px 12px;
+            text-transform: uppercase;
+            transform: rotate(-15deg);
+            border-radius: 8px;
+            opacity: 0.8;
+            display: none;
+            user-select: none;
+        }
+
+        .payment-paid .paid-stamp {
+            display: block;
+        }
+
+        .payment-paid #qrcode,
+        .payment-paid #qr-label {
+            display: none;
+        }
+
+        @media print {
+            .toast {
+                display: none !important;
+            }
+        }
+
+        .toast-success {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+        }
+
+        .toast-error {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        @keyframes toastIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes toastOut {
+            from {
+                opacity: 1;
+            }
+
+            to {
+                opacity: 0;
+            }
+        }
+
+        /* Notification Status Modal */
+        #notificationStatusModal .status-step {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+            padding: 8px;
+            border-radius: 8px;
+        }
+
+        #notificationStatusModal .status-step .icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: #e5e7eb;
+            font-size: 14px;
+        }
+
+        #notificationStatusModal .status-step.completed .icon {
+            background: #22c55e;
+            color: white;
+        }
+
+        #notificationStatusModal .status-step.pending .icon {
+            background: #3b82f6;
+            color: white;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 0.6;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0.6;
+            }
+        }
     </style>
 </head>
 
@@ -97,12 +259,18 @@
                 <a href="dashboard.html"
                     class="flex items-center px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800"><span
                         class="mr-3">📊</span> Dashboard</a>
-                <a href="sales.html"
+                <a href="create-invoice.html"
                     class="flex items-center px-4 py-3 rounded-lg bg-slate-800 text-white font-medium border-l-4 border-amber-500"><span
                         class="mr-3">🧾</span> New Invoice</a>
+                <a href="rate-update.html"
+                    class="flex items-center px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800"><span
+                        class="mr-3">💰</span> Rate Update</a>
                 <a href="products.html"
                     class="flex items-center px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800"><span
                         class="mr-3">💍</span> Products</a>
+                <a href="backup.html"
+                    class="flex items-center px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800"><span
+                        class="mr-3">💾</span> Data Backup</a>
             </nav>
         </aside>
 
@@ -111,11 +279,18 @@
             <div class="max-w-[210mm] mx-auto">
                 <div class="flex justify-between items-center mb-6 no-print">
                     <h1 class="text-2xl font-bold text-gray-800">New Sales Invoice</h1>
-                    <div class="space-x-2">
+                    <div class="space-x-2 flex items-center">
+                        <div id="supabase-status"
+                            class="flex items-center gap-2 px-3 py-1 rounded bg-gray-100 text-[10px] font-bold no-print">
+                            <span class="status-dot w-2 h-2 rounded-full bg-gray-400"></span>
+                            <span class="status-text text-gray-600">Checking Cloud...</span>
+                        </div>
                         <button onclick="window.history.back()"
-                            class="px-4 py-2 bg-gray-200 text-gray-700 rounded">Cancel</button>
-                        <button onclick="window.print()"
-                            class="px-4 py-2 bg-indigo-600 text-white rounded shadow-lg">Print Invoice</button>
+                            class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition">Cancel</button>
+                        <button onclick="saveAndPrintInvoice()"
+                            class="px-5 py-2 bg-indigo-600 text-white rounded shadow-lg hover:bg-indigo-700 transition flex items-center gap-2">
+                            <span>💾</span> Save & Print Invoice
+                        </button>
                     </div>
                 </div>
 
@@ -123,16 +298,15 @@
                 <div id="invoice-content" class="bg-white shadow-xl min-h-[297mm] relative flex flex-col">
 
                     <!-- Header Section -->
-                    <div class="relative w-full h-[240px]">
+                    <div class="relative w-full h-[210px]">
 
                         <!-- Logo (Left) -->
-                        <!-- Logo Removed -->
-                        <div class="absolute left-8 top-2 w-40 z-10 flex justify-center">
-                            <!-- <img src="images/logo.svg" class="w-32 h-auto" alt="Manti Jewel Art"> -->
+                        <div class="absolute left-4 top-3 z-30">
+                            <img src="images/logo.png" class="h-[75px] w-auto object-contain" alt="Manti Jewel Art">
                         </div>
 
                         <!-- Top Right: TAX INVOICE Title -->
-                        <div class="absolute right-8 top-6 text-right z-10">
+                        <div class="absolute right-8 top-4 text-right z-10">
                             <h2 class="text-4xl font-black text-manti-blue tracking-wide">TAX INVOICE</h2>
                         </div>
 
@@ -140,34 +314,29 @@
                         <div class="absolute top-[0px] w-full h-full z-0 pointer-events-none">
 
                             <!-- Orange Bar (Address) - Right Side -->
-                            <!-- Slant: / (Matching diagonal line with Blue) -->
-                            <div class="absolute right-0 top-[90px] h-[80px] w-[55%] bg-manti-orange-gradient text-white flex items-center justify-end pl-8 pr-12 z-10"
-                                style="clip-path: polygon(35% 0, 100% 0, 100% 100%, 7% 100%);">
-                                <div
-                                    class="flex flex-col text-[10px] leading-tight font-semibold text-right w-full pt-2">
-                                    <div class="mb-1">
-                                        No. 12/189, Prv Complex, Vannan Kovil Junction,<br>Mettupalayam Rd, Coimbatore,
-                                        Tamil Nadu - 641047.
+                            <div class="absolute right-0 top-[65px] h-[75px] w-[55%] bg-manti-orange-gradient text-white flex items-center justify-end pl-8 pr-8 z-10"
+                                style="clip-path: polygon(30% 0, 100% 0, 100% 100%, 5% 100%);">
+                                <div class="flex flex-col text-[11px] leading-snug font-semibold text-right w-full">
+                                    <div class="flex justify-end items-start mb-1">
+                                        <span class="text-right">📍 No. 12/189, Prv Complex, Vannan Kovil
+                                            Junction,<br>Mettupalayam Rd, Coimbatore, Tamil Nadu - 641047.</span>
                                     </div>
                                     <div class="flex justify-end items-center">
-                                        <span class="mr-1">📞</span>
-                                        <span>+91 90927 27655</span>
+                                        <span>📞 +91 90927 27655</span>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Blue Bar (Company Name) - Left Side -->
-                            <!-- Slant: / (Interlocks with Orange) -->
-                            <div class="absolute left-0 top-[120px] h-[50px] w-[60%] bg-manti-blue text-white flex items-center pl-8 z-20"
-                                style="clip-path: polygon(0 0, 100% 0, 85% 100%, 0% 100%);">
-                                <h1 class="text-xl font-bold tracking-wider uppercase">MANTI JEWEL ART PRIVATE LIMITED
-                                </h1>
+                            <div class="absolute left-0 top-[115px] h-[48px] w-[55%] bg-manti-blue text-white flex items-center pl-4 z-20"
+                                style="clip-path: polygon(0 0, 100% 0, 88% 100%, 0% 100%);">
+                                <h1 class="text-[15px] font-extrabold tracking-[0.15em] uppercase whitespace-nowrap">
+                                    MANTI JEWEL ART PRIVATE LIMITED</h1>
                             </div>
 
                             <!-- GSTIN Strip (Orange) - Below Blue Bar -->
-                            <!-- Slant: / (Continues the line) -->
-                            <div class="absolute left-0 top-[170px] h-[30px] w-[50%] bg-manti-orange-gradient text-white flex items-center pl-8 z-10"
-                                style="clip-path: polygon(0 0, 100% 0, 88% 100%, 0% 100%);">
+                            <div class="absolute left-0 top-[163px] h-[28px] w-[40%] bg-manti-orange-gradient text-white flex items-center pl-4 z-10"
+                                style="clip-path: polygon(0 0, 100% 0, 90% 100%, 0% 100%);">
                                 <span class="font-bold tracking-wide text-[11px]">GSTIN : 33AAUCM3607L1Z3</span>
                             </div>
                         </div>
@@ -185,7 +354,7 @@
                                 <div class="grid grid-cols-[60px_10px_1fr] gap-0 text-gray-800 font-medium">
                                     <div>Name</div>
                                     <div>:</div>
-                                    <input type="text" id="billName" value="Customer Name"
+                                    <input type="text" id="billName"
                                         class="w-full bg-transparent border-none p-0 h-4 focus:ring-0"
                                         placeholder="Customer Name">
 
@@ -193,19 +362,7 @@
                                     <div>:</div>
                                     <textarea id="billAddress" rows="2"
                                         class="w-full bg-transparent border-none p-0 resize-none leading-tight focus:ring-0"
-                                        placeholder="Address">Address</textarea>
-
-                                    <div>Mobile</div>
-                                    <div>:</div>
-                                    <input type="text" id="billMobile"
-                                        class="w-full bg-transparent border-none p-0 h-4 focus:ring-0"
-                                        placeholder="Mobile">
-
-                                    <div>Email</div>
-                                    <div>:</div>
-                                    <input type="email" id="billEmail"
-                                        class="w-full bg-transparent border-none p-0 h-4 focus:ring-0"
-                                        placeholder="Email">
+                                        placeholder="Address"></textarea>
 
                                     <div>State</div>
                                     <div>:</div>
@@ -217,13 +374,25 @@
                                     <input type="text" id="billGst"
                                         class="w-full bg-transparent border-none p-0 h-4 focus:ring-0"
                                         placeholder="GSTIN">
+
+                                    <div>Mobile</div>
+                                    <div>:</div>
+                                    <input type="tel" id="billMobile"
+                                        class="w-full bg-transparent border-none p-0 h-4 focus:ring-0"
+                                        placeholder="Mobile Number">
+
+                                    <div>Email</div>
+                                    <div>:</div>
+                                    <input type="email" id="billEmail"
+                                        class="w-full bg-transparent border-none p-0 h-4 focus:ring-0"
+                                        placeholder="Email Address">
                                 </div>
                             </div>
 
                             <!-- Ship To -->
                             <div>
                                 <div class="flex items-center justify-between border-b border-manti-orange mb-1">
-                                    <h3 class="font-bold text-manti-blue">Ship To</h3>
+                                    <h3 class="font-bold text-manti-blue">Shipp To</h3>
                                     <label class="flex items-center space-x-1 cursor-pointer">
                                         <input type="checkbox" id="sameAsBill" onchange="copyBillToShip()"
                                             class="w-3 h-3 text-manti-blue rounded focus:ring-0">
@@ -234,32 +403,31 @@
                                     <div>Name</div>
                                     <div>:</div>
                                     <input type="text" id="shipName"
-                                        class="w-full bg-transparent border-none p-0 h-4 focus:ring-0">
+                                        class="w-full bg-transparent border-none p-0 h-4 focus:ring-0"
+                                        placeholder="Name">
 
                                     <div>Address</div>
                                     <div>:</div>
                                     <textarea id="shipAddress" rows="2"
-                                        class="w-full bg-transparent border-none p-0 resize-none leading-tight focus:ring-0"></textarea>
-
-                                    <div>Mobile</div>
-                                    <div>:</div>
-                                    <input type="text" id="shipMobile"
-                                        class="w-full bg-transparent border-none p-0 h-4 focus:ring-0">
-
-                                    <div>Email</div>
-                                    <div>:</div>
-                                    <input type="email" id="shipEmail"
-                                        class="w-full bg-transparent border-none p-0 h-4 focus:ring-0">
+                                        class="w-full bg-transparent border-none p-0 resize-none leading-tight focus:ring-0"
+                                        placeholder="Address"></textarea>
 
                                     <div>State</div>
                                     <div>:</div>
                                     <input type="text" id="shipState" value="Tamil Nadu"
                                         class="w-full bg-transparent border-none p-0 h-4 focus:ring-0">
 
-                                    <div>GSTIN</div>
+                                    <div>Mobile</div>
                                     <div>:</div>
-                                    <input type="text" id="shipGst"
-                                        class="w-full bg-transparent border-none p-0 h-4 focus:ring-0">
+                                    <input type="tel" id="shipMobile"
+                                        class="w-full bg-transparent border-none p-0 h-4 focus:ring-0"
+                                        placeholder="Mobile Number">
+
+                                    <div>Email</div>
+                                    <div>:</div>
+                                    <input type="email" id="shipEmail"
+                                        class="w-full bg-transparent border-none p-0 h-4 focus:ring-0"
+                                        placeholder="Email Address">
                                 </div>
                             </div>
                         </div>
@@ -269,36 +437,36 @@
                             <div class="grid grid-cols-[100px_10px_1fr] gap-y-1 text-gray-800 font-medium">
                                 <div class="font-bold"># Inv. No</div>
                                 <div>:</div>
-                                <input type="text" value="INV-00123" id="invNo" oninput="updateQRCode()"
-                                    class="font-bold bg-transparent border-none p-0 h-4 focus:ring-0">
+                                <input type="text" id="invNo" readonly
+                                    class="font-bold bg-gray-100 border border-gray-300 rounded px-1 p-0 h-5 focus:ring-0 cursor-not-allowed text-manti-blue"
+                                    title="Invoice number is auto-generated">
 
                                 <div class="font-bold">Inv. Date</div>
                                 <div>:</div>
-                                <input type="text" value="18/02/2026"
-                                    class="bg-transparent border-none p-0 h-4 focus:ring-0">
+                                <input type="date" id="invDate" class="bg-transparent border-none p-0 h-4 focus:ring-0">
 
                                 <div class="font-bold">Payment Mode</div>
                                 <div>:</div>
-                                <select
+                                <select id="paymentMode"
                                     class="bg-transparent border-none p-0 h-5 focus:ring-0 w-full text-xs font-medium">
                                     <option value="Cash">Cash</option>
                                     <option value="UPI">UPI</option>
                                     <option value="Card">Card</option>
                                     <option value="Bank Transfer">Bank Transfer</option>
                                 </select>
+
+                                <div class="font-bold no-print">Payment Status</div>
+                                <div class="no-print">:</div>
+                                <select id="paymentStatus" onchange="updatePaymentUI()"
+                                    class="bg-transparent border-none p-0 h-5 focus:ring-0 w-full text-xs font-bold text-green-600 no-print">
+                                    <option value="Paid">Paid</option>
+                                    <option value="Payment Pending">Payment Pending</option>
+                                </select>
                             </div>
 
                             <div class="h-px bg-manti-orange w-full my-3"></div>
 
                             <div class="grid grid-cols-[100px_10px_1fr] gap-y-1 text-gray-800 font-medium">
-                                <div class="font-bold">Transport Mode</div>
-                                <div>:</div>
-                                <select id="transportMode" onchange="toggleTransportFields()"
-                                    class="bg-transparent border-none p-0 h-5 focus:ring-0 w-full text-xs font-medium">
-                                    <option value="Self">Self</option>
-                                    <option value="Parcel Service">Parcel Service</option>
-                                </select>
-
                                 <div class="font-bold">Buyer's Order No</div>
                                 <div>:</div>
                                 <input type="text" class="bg-transparent border-none p-0 h-4 focus:ring-0">
@@ -331,16 +499,13 @@
                             <thead>
                                 <tr class="bg-manti-dark text-white h-9">
                                     <th class="w-8">Sr</th>
-                                    <th class="w-24 pl-2">Type</th>
-                                    <th class="text-left pl-2">Goods & Service Discription</th>
-                                    <th class="w-16">Weight</th>
-                                    <th class="w-16">MC</th>
+                                    <th class="text-left pl-2">Goods & Service Description</th>
                                     <th class="w-14">HSN</th>
-                                    <th class="w-14">Qty</th>
+                                    <th class="w-24">Metal Type</th>
+                                    <th class="w-16">Weight(g)</th>
                                     <th class="w-20">Rate</th>
-                                    <!-- REMOVED TAXABLE COLUMN -->
-                                    <!-- REMOVED GST COLUMN -->
-                                    <th class="w-28">Total</th>
+                                    <th class="w-20">MC(%)</th>
+                                    <th class="w-24">Total</th>
                                     <th class="w-6 no-print bg-white border-0"></th>
                                 </tr>
                             </thead>
@@ -348,45 +513,39 @@
                                 <tr class="h-8 align-top">
                                     <td class="text-center py-1 font-bold">1</td>
                                     <td class="pl-2 py-1">
-                                        <select
-                                            class="w-full bg-transparent font-medium text-[10px] focus:outline-none">
-                                            <option value="pure_gold">Pure Gold</option>
-                                            <option value="pure_silver">Pure Silver</option>
-                                            <option value="gold_22k">Gold (22K)</option>
-                                            <option value="silver_925">Silver (925)</option>
-                                        </select>
+                                        <input type="text"
+                                            class="w-full bg-transparent font-bold focus:outline-none desc"
+                                            placeholder="Enter item description">
                                     </td>
-                                    <td class="pl-2 py-1">
-                                        <select class="w-full bg-transparent font-bold focus:outline-none"
-                                            onchange="updateRow(this)">
-                                            <option value="">Select Item</option>
-                                            <option value="gold_chain" data-rate="5850" data-mc="12"
-                                                data-mc-type="percent" selected>Select Item</option>
-                                            <option value="gold_chain_real" data-rate="5850" data-mc="12"
-                                                data-mc-type="percent">Gold Chain 22k</option>
+                                    <td class="text-center py-1">
+                                        <input type="text"
+                                            class="w-full text-center bg-transparent focus:outline-none hsn"
+                                            value="7113">
+                                    </td>
+                                    <td class="text-center py-1">
+                                        <select
+                                            class="w-full bg-transparent text-center focus:outline-none metal-type text-[10px]"
+                                            onchange="onMetalTypeChange(this)">
+                                            <option value="Pure Gold">Pure Gold</option>
+                                            <option value="Pure Silver">Pure Silver</option>
+                                            <option value="Gold(22K)">Gold(22K)</option>
+                                            <option value="Silver(925)">Silver(925)</option>
                                         </select>
                                     </td>
                                     <td class="text-center py-1">
+                                        <input type="number" step="0.001"
+                                            class="w-full text-center bg-transparent weight" placeholder="0.000"
+                                            oninput="calculate(this)">
+                                    </td>
+                                    <td class="text-right pr-1 py-1">
                                         <input type="number"
-                                            class="w-full text-center bg-transparent border-b border-gray-300 weight"
-                                            value="0" oninput="calculate(this)">
+                                            class="w-full text-right bg-transparent rate bg-gray-50 cursor-not-allowed"
+                                            readonly placeholder="Auto">
                                     </td>
-                                    <td class="text-center py-1 relative group">
-                                        <input type="number"
-                                            class="w-full text-center bg-transparent border-b border-gray-300 mc"
-                                            value="0" oninput="calculate(this)">
-                                        <span
-                                            class="absolute top-[-10px] right-0 text-[10px] text-gray-500 mc-type font-bold"></span>
+                                    <td class="text-center py-1">
+                                        <input type="number" class="w-full text-center bg-transparent mc"
+                                            oninput="calculate(this)" placeholder="%" value="0">
                                     </td>
-                                    <td class="text-center py-1">7113</td>
-                                    <td class="text-center py-1"><input type="number"
-                                            class="w-full text-center bg-transparent qty" value="1"
-                                            oninput="calculate(this)"></td>
-                                    <td class="text-right pr-1 py-1"><input type="number"
-                                            class="w-full text-right bg-transparent rate" oninput="calculate(this)">
-                                    </td>
-                                    <!-- REMOVED TAXABLE CELL -->
-                                    <!-- REMOVED GST CELL -->
                                     <td class="text-right pr-1 py-1 font-bold total">0.00</td>
                                     <td class="text-center no-print border-0"><button onclick="removeRow(this)"
                                             class="text-red-500 font-bold">&times;</button></td>
@@ -395,8 +554,6 @@
                             <tfoot>
                                 <tr class="font-bold bg-gray-50 h-8">
                                     <td colspan="7" class="text-right pr-2">Sub-Total:</td>
-                                    <!-- REMOVED TAXABLE SUBSUMMARY CELL -->
-                                    <!-- REMOVED GST SUBSUMMARY CELL -->
                                     <td class="text-right pr-2" id="subTotalTotal">0.00</td>
                                     <td class="no-print border-0"></td>
                                 </tr>
@@ -407,10 +564,9 @@
                             Item</button>
 
                         <!-- Watermark -->
-                        <!-- Watermark Restored -->
                         <div
-                            class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.10] z-0 mt-32">
-                            <img src="images/lion-logo.png" class="w-[450px] h-[450px]">
+                            class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.04] z-0">
+                            <img src="images/logo.png" class="w-[450px] h-[450px] grayscale object-contain">
                         </div>
                     </div>
 
@@ -446,10 +602,15 @@
                                     </div>
                                 </div>
                                 <!-- QR Code Container -->
-                                <div id="qrCodeContainer" class="flex flex-col items-center justify-center pt-2">
+                                <div id="qrCodeContainer"
+                                    class="flex flex-col items-center justify-center pt-2 relative min-w-[100px]">
                                     <div id="qrcode" class="mb-1 p-1 bg-white border border-gray-200"></div>
-                                    <span class="text-[9px] font-bold text-manti-blue uppercase tracking-wide">Scan to
+                                    <span id="qr-label"
+                                        class="text-[9px] font-bold text-manti-blue uppercase tracking-wide">Scan to
                                         Pay</span>
+                                    <div
+                                        class="paid-stamp absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+                                        PAID</div>
                                 </div>
                             </div>
 
@@ -473,7 +634,7 @@
                                     <div>0.00</div>
                                     <div>Round off</div>
                                     <div>:</div>
-                                    <div>0.00</div>
+                                    <div id="roundOff">0.00</div>
                                     <div class="col-span-3 border-t border-gray-800 my-1"></div>
                                     <div class="font-bold text-manti-blue">Total Amount</div>
                                     <div>:</div>
@@ -500,79 +661,580 @@
         </main>
     </div>
 
+    <!-- Share Modal (after save) -->
+    <div id="shareModal" class="modal-overlay no-print">
+        <div class="modal-box text-center">
+            <div class="text-5xl mb-4">✅</div>
+            <h2 class="text-xl font-bold text-gray-800 mb-2">Invoice Saved Successfully!</h2>
+            <p class="text-sm text-gray-500 mb-1" id="savedInvNo"></p>
+            <p class="text-sm text-gray-500 mb-6">Share the invoice with the customer:</p>
+            <div class="flex gap-3 justify-center mb-4">
+                <button onclick="sendWhatsApp()"
+                    class="flex items-center gap-2 px-5 py-3 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600 transition shadow-lg">
+                    <span class="text-xl">📱</span> WhatsApp
+                </button>
+                <button onclick="sendEmail()"
+                    class="flex items-center gap-2 px-5 py-3 bg-blue-500 text-white rounded-xl font-bold hover:bg-blue-600 transition shadow-lg">
+                    <span class="text-xl">📧</span> Email
+                </button>
+            </div>
+            <button onclick="closeShareModal()" class="text-sm text-gray-400 hover:text-gray-600 underline">Skip &
+                Close</button>
+        </div>
+    </div>
+
+    <!-- Notification Status Modal -->
+    <div id="notificationStatusModal" class="modal-overlay no-print">
+        <div class="modal-box">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Processing Invoice</h2>
+            <div id="statusSteps">
+                <div class="status-step" id="step-db">
+                    <div class="icon">💾</div>
+                    <div class="text-sm font-medium">Syncing to Database...</div>
+                </div>
+                <div class="status-step" id="step-pdf">
+                    <div class="icon">📄</div>
+                    <div class="text-sm font-medium">Generating PDF Invoice...</div>
+                </div>
+                <div class="status-step" id="step-upload">
+                    <div class="icon">☁️</div>
+                    <div class="text-sm font-medium">Uploading to Cloud Storage...</div>
+                </div>
+                <div class="status-step" id="step-email">
+                    <div class="icon">📧</div>
+                    <div class="text-sm font-medium">Sending Email Notification...</div>
+                </div>
+                <div class="status-step" id="step-sms">
+                    <div class="icon">📱</div>
+                    <div class="text-sm font-medium">Sending SMS Notification...</div>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-center">
+                <button id="closeStatusBtn" onclick="closeStatusModal()"
+                    class="hidden px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-bold">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Auth Modal -->
+    <div id="adminModal" class="modal-overlay no-print">
+        <div class="modal-box">
+            <h2 class="text-xl font-bold text-gray-800 mb-2">🔐 Admin Access Required</h2>
+            <p class="text-sm text-gray-500 mb-4">Only admin can edit or delete invoices. Enter the admin password:</p>
+            <input type="password" id="adminPassword" placeholder="Enter admin password"
+                class="w-full border-2 border-gray-300 rounded-xl px-4 py-3 mb-4 focus:border-indigo-500 focus:outline-none text-sm">
+            <div class="flex gap-3">
+                <button onclick="closeAdminModal()"
+                    class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300">Cancel</button>
+                <button onclick="verifyAdmin()"
+                    class="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700">Verify</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Logic Script -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/cloud-sync.js"></script>
+    <script src="js/pdf-service.js"></script>
+    <script src="js/notification-service.js"></script>
     <script>
+        // ===== INVOICE NUMBER SYSTEM =====
+        const INVOICE_PREFIX = 'INV-';
+        const ADMIN_PASSWORD = 'manti@admin'; // Change this to your desired admin password
+
+        function getNextInvoiceNumber() {
+            let lastNum = parseInt(localStorage.getItem('lastInvoiceNumber')) || 0;
+            lastNum++;
+            const invNo = INVOICE_PREFIX + String(lastNum).padStart(5, '0');
+            return { number: lastNum, display: invNo };
+        }
+
+        function initInvoiceNumber() {
+            const result = getNextInvoiceNumber();
+            document.getElementById('invNo').value = result.display;
+
+            // Set default date
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            document.getElementById('invDate').value = `${year}-${month}-${day}`;
+        }
+
+        async function initPage() {
+            initInvoiceNumber();
+            loadRatesForAllRows();
+            updateQRCode();
+            updatePaymentUI();
+
+            // Test Supabase Connection
+            const statusIndicator = document.getElementById('supabase-status');
+            const dot = statusIndicator.querySelector('.status-dot');
+            const text = statusIndicator.querySelector('.status-text');
+
+            try {
+                const result = await CloudSync.testConnection();
+                if (result.success) {
+                    dot.className = "status-dot w-2 h-2 rounded-full bg-green-500";
+                    text.textContent = "Cloud Connected";
+                    text.className = "status-text text-green-600";
+                } else {
+                    dot.className = "status-dot w-2 h-2 rounded-full bg-red-500";
+                    text.textContent = "Cloud Error";
+                    text.className = "status-text text-red-600";
+                    console.error("Supabase Connection Error:", result.message);
+                }
+            } catch (err) {
+                dot.className = "status-dot w-2 h-2 rounded-full bg-red-500";
+                text.textContent = "Cloud Offline";
+                text.className = "status-text text-red-600";
+            }
+        }
+
+        window.onload = initPage;
+
+        // ===== SAVE & PRINT =====
+        async function saveAndPrintInvoice() {
+            // Validate required fields
+            const errors = validateInvoice();
+            if (errors.length > 0) {
+                showToast(errors[0], 'error');
+                return;
+            }
+
+            // Show Processing Modal Immediately
+            const modal = document.getElementById('notificationStatusModal');
+            modal.classList.add('active');
+            document.getElementById('closeStatusBtn').classList.add('hidden');
+
+            // Collect all invoice data
+            const invoiceData = collectInvoiceData();
+
+            // Start Parallel Processes
+            const dbPromise = saveInvoiceWithStatus(invoiceData);
+            const notificationPromise = startNotificationFlow(invoiceData);
+
+            // Wait for DB save, but don't crash if it fails (it will update its own status)
+            const dbResult = await dbPromise.catch(e => false);
+
+            if (!dbResult) {
+                showToast('Cloud sync failed, but data is saved locally. You can proceed to print.', 'warning');
+            } else {
+                showToast('Invoice ' + invoiceData.invNo + ' saved successfully!', 'success');
+            }
+
+            // Wait for PDF and other notifications to finish
+            await notificationPromise;
+
+            // Show Done Button (Ensure it's visible now)
+            document.getElementById('closeStatusBtn').classList.remove('hidden');
+
+            // Print the invoice (Small delay to ensure no-print classes are ready)
+            setTimeout(() => {
+                window.print();
+            }, 500);
+        }
+
+        async function saveInvoiceWithStatus(data) {
+            updateStepStatus('step-db', 'pending');
+            try {
+                // Increment the stored invoice number and save locally/cloud
+                const currentNum = parseInt(data.invNo.replace(INVOICE_PREFIX, ''));
+                localStorage.setItem('lastInvoiceNumber', currentNum);
+
+                await CloudSync.saveInvoice(data);
+                updateStepStatus('step-db', 'completed', '✅');
+                return true;
+            } catch (error) {
+                console.error('Database sync failed:', error);
+                updateStepStatus('step-db', 'completed', '❌');
+                return false;
+            }
+        }
+
+        function validateInvoice() {
+            const errors = [];
+
+            // Bill To Validation
+            const billName = document.getElementById('billName').value.trim();
+            const billAddress = document.getElementById('billAddress').value.trim();
+            const billState = document.getElementById('billState').value.trim();
+            const billMobile = document.getElementById('billMobile').value.trim();
+            const billEmail = document.getElementById('billEmail').value.trim();
+
+            if (!billName || billName === 'Customer Name') errors.push('Customer Name is required');
+            if (!billAddress || billAddress === 'Address') errors.push('Billing Address is required');
+            if (!billState) errors.push('Billing State is required');
+            if (!billMobile) errors.push('Billing Mobile Number is required');
+            if (!billEmail) errors.push('Billing Email Address is required');
+
+            // Ship To Validation
+            const shipName = document.getElementById('shipName').value.trim();
+            const shipAddress = document.getElementById('shipAddress').value.trim();
+            const shipState = document.getElementById('shipState').value.trim();
+            const shipMobile = document.getElementById('shipMobile').value.trim();
+            const shipEmail = document.getElementById('shipEmail').value.trim();
+
+            if (!shipName) errors.push('Shipping Name is required');
+            if (!shipAddress) errors.push('Shipping Address is required');
+            if (!shipState) errors.push('Shipping State is required');
+            if (!shipMobile) errors.push('Shipping Mobile is required');
+            if (!shipEmail) errors.push('Shipping Email is required');
+
+            // Items Validation
+            const rows = document.querySelectorAll('#invoiceItems tr');
+            let hasValidItem = false;
+            rows.forEach((row, index) => {
+                const desc = row.querySelector('.desc')?.value.trim();
+                const weight = parseFloat(row.querySelector('.weight')?.value);
+                const total = parseFloat(row.querySelector('.total')?.innerText);
+
+                if (desc && !isNaN(weight) && weight > 0) {
+                    hasValidItem = true;
+                } else if (desc || !isNaN(weight)) {
+                    errors.push(`Row ${index + 1}: Description and Weight are required`);
+                }
+            });
+
+            if (!hasValidItem) errors.push('At least one valid item is required');
+
+            return errors;
+        }
+
+        async function startNotificationFlow(invoiceData) {
+            try {
+                // Step 1: Generate PDF
+                updateStepStatus('step-pdf', 'pending');
+                const blob = await PDFService.generateInvoicePDF(invoiceData);
+                updateStepStatus('step-pdf', 'completed', '✅');
+
+                // Step 2: Upload to Supabase Storage
+                updateStepStatus('step-upload', 'pending');
+                try {
+                    const filename = `${invoiceData.invNo}_${Date.now()}.pdf`;
+                    const publicUrl = await NotificationService.uploadInvoicePDF(blob, filename);
+                    updateStepStatus('step-upload', 'completed', '✅');
+
+                    // Step 3: Send Email Automatically
+                    if (invoiceData.billTo.email) {
+                        updateStepStatus('step-email', 'pending');
+                        const emailResult = await NotificationService.sendInvoiceEmail(invoiceData.billTo.email, publicUrl, invoiceData);
+                        if (emailResult === 'sent') {
+                            updateStepStatus('step-email', 'completed', '✅');
+                        } else if (emailResult.startsWith('failed')) {
+                            const errorDetail = emailResult.split(': ')[1] || 'Unknown Error';
+                            updateStepStatus('step-email', 'completed', '⚠️');
+                            showToast(`Email Failed: ${errorDetail}`, 'error');
+                        } else {
+                            updateStepStatus('step-email', 'completed', '⏩');
+                        }
+                    } else {
+                        updateStepStatus('step-email', 'completed', '⏩');
+                    }
+
+                    // Step 4: Send SMS Automatically
+                    if (invoiceData.billTo.mobile) {
+                        updateStepStatus('step-sms', 'pending');
+                        const smsResult = await NotificationService.sendInvoiceSMS(invoiceData.billTo.mobile, publicUrl, invoiceData);
+                        if (smsResult === 'sent') {
+                            updateStepStatus('step-sms', 'completed', '✅');
+                        } else if (smsResult.startsWith('failed')) {
+                            const errorDetail = smsResult.split(': ')[1] || 'Unknown Error';
+                            updateStepStatus('step-sms', 'completed', '⚠️');
+                            showToast(`SMS Failed: ${errorDetail}`, 'error');
+                        } else {
+                            updateStepStatus('step-sms', 'completed', '⏩');
+                        }
+                    } else {
+                        updateStepStatus('step-sms', 'completed', '⏩');
+                    }
+                } catch (uploadError) {
+                    console.error('Upload or notification failed:', uploadError);
+                    updateStepStatus('step-upload', 'completed', '❌');
+                    updateStepStatus('step-email', 'completed', '⚠️');
+                    updateStepStatus('step-sms', 'completed', '⚠️');
+
+                    let errorMsg = uploadError.message;
+                    if (window.location.protocol === 'file:') {
+                        errorMsg = 'Security Error: You must run this using a "Local Server" (like Live Server in VS Code) for Email/Cloud features to work.';
+                    }
+                    showToast(errorMsg, 'error');
+                }
+            } catch (error) {
+                console.error('PDF Generation failed:', error);
+                updateStepStatus('step-pdf', 'completed', '❌');
+                showToast('Failed to generate PDF: ' + error.message, 'error');
+                document.getElementById('closeStatusBtn').classList.remove('hidden');
+            }
+        }
+
+        function updateStepStatus(stepId, status, icon) {
+            const step = document.getElementById(stepId);
+            step.className = `status-step ${status}`;
+            if (icon) {
+                step.querySelector('.icon').textContent = icon;
+            }
+        }
+
+        function closeStatusModal() {
+            document.getElementById('notificationStatusModal').classList.remove('active');
+            // Reset for next time
+            ['step-db', 'step-pdf', 'step-upload', 'step-email', 'step-sms'].forEach(id => {
+                const step = document.getElementById(id);
+                step.className = 'status-step';
+                const originalIcons = { 'step-db': '💾', 'step-pdf': '📄', 'step-upload': '☁️', 'step-email': '📧', 'step-sms': '📱' };
+                step.querySelector('.icon').textContent = originalIcons[id];
+            });
+            document.getElementById('closeStatusBtn').classList.add('hidden');
+
+            // Show share modal as original behavior
+            const invoiceData = collectInvoiceData();
+            document.getElementById('savedInvNo').textContent = 'Invoice: ' + invoiceData.invNo + ' | Amount: ' + document.getElementById('grandTotal').innerText;
+            document.getElementById('shareModal').classList.add('active');
+        }
+
+        function collectInvoiceData() {
+            const items = [];
+            document.querySelectorAll('#invoiceItems tr').forEach((row, i) => {
+                items.push({
+                    sr: i + 1,
+                    description: row.querySelector('.desc')?.value || '',
+                    hsn: row.querySelector('.hsn')?.value || '',
+                    metalType: row.querySelector('.metal-type')?.value || '',
+                    weight: row.querySelector('.weight')?.value || '',
+                    rate: row.querySelector('.rate')?.value || '',
+                    mc: row.querySelector('.mc')?.value || '',
+                    total: row.querySelector('.total')?.innerText || '0.00'
+                });
+            });
+
+            const paymentStatus = document.getElementById('paymentStatus').value;
+            const paymentMode = document.getElementById('paymentMode').value;
+            const invNo = document.getElementById('invNo').value;
+            const totalText = document.getElementById('grandTotal').innerText.replace('₹ ', '').trim();
+            const total = parseFloat(totalText) || 0;
+
+            // Generate Payment Link
+            const upiId = "mantijwewlartpvt@idfcbank";
+            const name = "MANTI JEWEL ART PRIVATE LIMITED";
+            const note = `Invoice ${invNo}`;
+            const paymentLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${total.toFixed(2)}&cu=INR&tn=${encodeURIComponent(note)}`;
+
+            // Capture QR DataURI if status is Pending
+            let qrDataUri = null;
+            if (paymentStatus === 'Payment Pending') {
+                const qrCanvas = document.querySelector('#qrcode canvas');
+                if (qrCanvas) qrDataUri = qrCanvas.toDataURL('image/png');
+            }
+
+            return {
+                invNo: invNo,
+                invDate: document.getElementById('invDate').value,
+                paymentMode: paymentMode,
+                paymentStatus: paymentStatus,
+                paymentLink: paymentLink,
+                qrDataUri: qrDataUri,
+                billTo: {
+                    name: document.getElementById('billName').value,
+                    address: document.getElementById('billAddress').value,
+                    state: document.getElementById('billState').value,
+                    gstin: document.getElementById('billGst').value,
+                    mobile: document.getElementById('billMobile').value,
+                    email: document.getElementById('billEmail').value
+                },
+                shipTo: {
+                    name: document.getElementById('shipName').value,
+                    address: document.getElementById('shipAddress').value,
+                    state: document.getElementById('shipState').value,
+                    mobile: document.getElementById('shipMobile').value,
+                    email: document.getElementById('shipEmail').value
+                },
+                items: items,
+                totals: {
+                    subTotal: document.getElementById('subTotalTotal')?.innerText || '0.00',
+                    cgst: document.getElementById('cgstTotal')?.innerText || '0.00',
+                    sgst: document.getElementById('sgstTotal')?.innerText || '0.00',
+                    roundOff: document.getElementById('roundOff')?.innerText || '0.00',
+                    grandTotal: document.getElementById('grandTotal')?.innerText || '0.00'
+                },
+                amountInWords: document.getElementById('amountInWords')?.innerText || '',
+                savedAt: new Date().toISOString(),
+                status: 'saved'
+            };
+        }
+
+        function saveInvoice(data) {
+            // Increment the stored invoice number
+            const currentNum = parseInt(data.invNo.replace(INVOICE_PREFIX, ''));
+            localStorage.setItem('lastInvoiceNumber', currentNum);
+
+            // Use CloudSync to save
+            CloudSync.saveInvoice(data);
+        }
+
+        // ===== WHATSAPP & EMAIL =====
+        function sendWhatsApp() {
+            const invNo = document.getElementById('invNo').value;
+            const billName = document.getElementById('billName').value;
+            const billMobile = document.getElementById('billMobile').value.replace(/\s+/g, '').replace(/^\+/, '');
+            const total = document.getElementById('grandTotal').innerText;
+            const date = document.getElementById('invDate').value;
+
+            // Build items summary
+            let itemsList = '';
+            document.querySelectorAll('#invoiceItems tr').forEach((row, i) => {
+                const desc = row.querySelector('.desc')?.value || '';
+                const qty = row.querySelector('.qty')?.value || '';
+                const rowTotal = row.querySelector('.total')?.innerText || '';
+                if (desc) itemsList += `${i + 1}. ${desc} (Qty: ${qty}) - ₹${rowTotal}\n`;
+            });
+
+            const message = `*MANTI JEWEL ART PRIVATE LIMITED*\n` +
+                `━━━━━━━━━━━━━━━━━━\n` +
+                `📋 Invoice: *${invNo}*\n` +
+                `📅 Date: ${date}\n` +
+                `👤 Customer: ${billName}\n\n` +
+                `📦 *Items:*\n${itemsList}\n` +
+                `💰 *Total Amount: ${total}*\n\n` +
+                `🏦 Bank: IDFC FIRST - Pollachi Branch\n` +
+                `A/C: 70008000727 | IFSC: IDFB0080538\n` +
+                `UPI: mantijwewlartpvt@idfcbank\n\n` +
+                `Thank you for your business! 🙏`;
+
+            // If mobile number is available, send directly to that number
+            const phoneParam = billMobile ? billMobile : '';
+            const url = phoneParam
+                ? `https://wa.me/${phoneParam}?text=${encodeURIComponent(message)}`
+                : `https://wa.me/?text=${encodeURIComponent(message)}`;
+            window.open(url, '_blank');
+            closeShareModal();
+        }
+
+        function sendEmail() {
+            const invNo = document.getElementById('invNo').value;
+            const billName = document.getElementById('billName').value;
+            const billEmail = document.getElementById('billEmail').value;
+            const total = document.getElementById('grandTotal').innerText;
+            const date = document.getElementById('invDate').value;
+
+            const subject = `Invoice ${invNo} - Manti Jewel Art Pvt Ltd`;
+            const body = `Dear ${billName},\n\n` +
+                `Please find your invoice details below:\n\n` +
+                `Invoice No: ${invNo}\n` +
+                `Date: ${date}\n` +
+                `Total Amount: ${total}\n\n` +
+                `Bank Details:\n` +
+                `Bank: IDFC FIRST - Pollachi Branch\n` +
+                `Account No: 70008000727\n` +
+                `IFSC: IDFB0080538\n` +
+                `UPI: mantijwewlartpvt@idfcbank\n\n` +
+                `Thank you for your business!\n\n` +
+                `Regards,\nManti Jewel Art Private Limited\n` +
+                `GSTIN: 33AAUCM3607L1Z3`;
+
+            // Use customer email as recipient if available
+            const recipient = billEmail || '';
+            const url = `mailto:${recipient}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            window.location.href = url;
+            closeShareModal();
+        }
+
+        // ===== ADMIN ACCESS =====
+        let pendingAdminAction = null;
+
+        function requestAdminAccess(action) {
+            pendingAdminAction = action;
+            document.getElementById('adminPassword').value = '';
+            document.getElementById('adminModal').classList.add('active');
+            setTimeout(() => document.getElementById('adminPassword').focus(), 100);
+        }
+
+        function verifyAdmin() {
+            const password = document.getElementById('adminPassword').value;
+            if (password === ADMIN_PASSWORD) {
+                document.getElementById('adminModal').classList.remove('active');
+                if (pendingAdminAction) pendingAdminAction();
+                pendingAdminAction = null;
+            } else {
+                showToast('Invalid admin password!', 'error');
+                document.getElementById('adminPassword').value = '';
+                document.getElementById('adminPassword').focus();
+            }
+        }
+
+        function closeAdminModal() {
+            document.getElementById('adminModal').classList.remove('active');
+            pendingAdminAction = null;
+        }
+
+        function closeShareModal() {
+            document.getElementById('shareModal').classList.remove('active');
+            // Reset form for new invoice
+            resetForNewInvoice();
+        }
+
+        function resetForNewInvoice() {
+            // Get next invoice number
+            initInvoiceNumber();
+            // Clear form fields
+            document.getElementById('billName').value = '';
+            document.getElementById('billAddress').value = '';
+            document.getElementById('billGst').value = '';
+            document.getElementById('billMobile').value = '';
+            document.getElementById('billEmail').value = '';
+            document.getElementById('shipName').value = '';
+            document.getElementById('shipAddress').value = '';
+            document.getElementById('shipMobile').value = '';
+            document.getElementById('shipEmail').value = '';
+            // Reset items table to single empty row
+            const tbody = document.getElementById('invoiceItems');
+            while (tbody.rows.length > 1) tbody.deleteRow(1);
+            const firstRow = tbody.rows[0];
+            firstRow.querySelectorAll('input').forEach(i => {
+                if (i.classList.contains('hsn')) i.value = '7113';
+                else i.value = '';
+            });
+            firstRow.querySelector('.total').innerText = '0.00';
+            firstRow.querySelector('.metal-type').value = 'Pure Gold';
+            calculateTotals();
+        }
+
+        // ===== UI HELPERS =====
+        function showToast(message, type) {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // ===== EXISTING FUNCTIONS =====
         function copyBillToShip() {
             if (document.getElementById('sameAsBill').checked) {
                 document.getElementById('shipName').value = document.getElementById('billName').value;
                 document.getElementById('shipAddress').value = document.getElementById('billAddress').value;
+                document.getElementById('shipState').value = document.getElementById('billState').value;
                 document.getElementById('shipMobile').value = document.getElementById('billMobile').value;
                 document.getElementById('shipEmail').value = document.getElementById('billEmail').value;
-                document.getElementById('shipState').value = document.getElementById('billState').value;
-                document.getElementById('shipGst').value = document.getElementById('billGst').value;
             } else {
-                document.getElementById('shipName').value = '';
                 document.getElementById('shipName').value = '';
                 document.getElementById('shipAddress').value = '';
+                document.getElementById('shipState').value = '';
                 document.getElementById('shipMobile').value = '';
                 document.getElementById('shipEmail').value = '';
-                document.getElementById('shipGst').value = '';
             }
-        }
-
-        function toggleTransportFields() {
-            const mode = document.getElementById('transportMode').value;
-            const vehicleInput = document.getElementById('vehicleNo');
-            const detailsInput = document.getElementById('transportDetails');
-
-            if (mode === 'Parcel Service') {
-                vehicleInput.placeholder = 'Required';
-                vehicleInput.classList.add('bg-red-50');
-                detailsInput.placeholder = 'Required';
-                detailsInput.classList.add('bg-red-50');
-            } else {
-                vehicleInput.placeholder = '';
-                vehicleInput.classList.remove('bg-red-50');
-                detailsInput.placeholder = '';
-                detailsInput.classList.remove('bg-red-50');
-            }
-        }
-
-        function updateRow(select) {
-            const row = select.closest('tr');
-            const option = select.options[select.selectedIndex];
-            const rate = parseFloat(option.dataset.rate) || 0;
-            const mc = parseFloat(option.dataset.mc) || 0;
-            const mcType = option.dataset.mcType || 'fixed';
-
-            row.querySelector('.rate').value = rate;
-            row.querySelector('.mc').value = mc;
-            row.dataset.mcType = mcType;
-            row.querySelector('.mc-type').innerText = mcType === 'percent' ? '%' : '₹';
-
-            calculate(select);
         }
 
         function calculate(element) {
             const row = element.closest('tr');
-            const qty = parseFloat(row.querySelector('.qty').value) || 0;
             const weight = parseFloat(row.querySelector('.weight').value) || 0;
             const rate = parseFloat(row.querySelector('.rate').value) || 0;
-            const mc = parseFloat(row.querySelector('.mc').value) || 0;
-            const mcType = row.dataset.mcType || 'fixed';
+            const mcPercent = parseFloat(row.querySelector('.mc').value) || 0;
 
-            let baseValue = weight > 0 ? rate * weight : rate;
-
-            let mcAmount = 0;
-            if (mcType === 'percent') {
-                mcAmount = baseValue * (mc / 100);
-            } else {
-                // Fixed logic: usually MC is per gram if weight exists
-                mcAmount = weight > 0 ? mc * weight : mc;
-            }
-
-            const taxable = (baseValue + mcAmount) * qty;
-            const total = taxable;
+            const baseAmount = rate * weight;
+            const mcAmount = baseAmount * (mcPercent / 100);
+            const total = baseAmount + mcAmount;
 
             row.querySelector('.total').innerText = total.toFixed(2);
             calculateTotals();
@@ -580,18 +1242,26 @@
 
         function calculateTotals() {
             let grandTotal = 0;
+
             document.querySelectorAll('#invoiceItems tr').forEach(row => {
                 grandTotal += parseFloat(row.querySelector('.total').innerText) || 0;
             });
 
             document.getElementById('subTotalTotal').innerText = grandTotal.toFixed(2);
 
-            // Tax Calculation for Summary (3% GST on Total)
-            const totalGst = grandTotal * 0.03;
-            const roundedTotal = Math.round(grandTotal + totalGst);
+            // GST calculation (3% default for jewellery)
+            const gstRate = 0.03;
+            const gstAmt = grandTotal * gstRate;
+            document.getElementById('cgstTotal').innerText = (gstAmt / 2).toFixed(2);
+            document.getElementById('sgstTotal').innerText = (gstAmt / 2).toFixed(2);
 
-            document.getElementById('cgstTotal').innerText = (totalGst / 2).toFixed(2);
-            document.getElementById('sgstTotal').innerText = (totalGst / 2).toFixed(2);
+            const totalWithGst = grandTotal + gstAmt;
+
+            // Round off
+            const roundedTotal = Math.round(totalWithGst);
+            const roundOff = roundedTotal - totalWithGst;
+            document.getElementById('roundOff').innerText = roundOff.toFixed(2);
+
             document.getElementById('grandTotal').innerText = '₹ ' + roundedTotal.toFixed(2);
 
             // Update Words
@@ -601,10 +1271,27 @@
             updateQRCode();
         }
 
+        function updatePaymentUI() {
+            const status = document.getElementById('paymentStatus').value;
+            const container = document.getElementById('invoice-content');
+
+            if (status === 'Paid') {
+                container.classList.add('payment-paid');
+                document.getElementById('paymentStatus').className = "bg-transparent border-none p-0 h-5 focus:ring-0 w-full text-xs font-bold text-green-600 no-print";
+            } else {
+                container.classList.remove('payment-paid');
+                document.getElementById('paymentStatus').className = "bg-transparent border-none p-0 h-5 focus:ring-0 w-full text-xs font-bold text-red-600 no-print";
+            }
+            updateQRCode();
+        }
+
         function updateQRCode() {
+            const status = document.getElementById('paymentStatus').value;
+            if (status === 'Paid') return;
+
             const totalText = document.getElementById('grandTotal').innerText.replace('₹ ', '').trim();
             const total = parseFloat(totalText) || 0;
-            const invNo = document.getElementById('invNo').value || "INV-00123";
+            const invNo = document.getElementById('invNo').value || "INV-00001";
 
             const upiId = "mantijwewlartpvt@idfcbank";
             const name = "MANTI JEWEL ART PRIVATE LIMITED";
@@ -618,8 +1305,8 @@
             if (typeof QRCode !== 'undefined') {
                 new QRCode(container, {
                     text: url,
-                    width: 100,
-                    height: 100,
+                    width: 70,
+                    height: 70,
                     colorDark: "#000000",
                     colorLight: "#ffffff",
                     correctLevel: QRCode.CorrectLevel.H
@@ -630,12 +1317,17 @@
         function addRow() {
             const tbody = document.getElementById('invoiceItems');
             const newRow = tbody.rows[0].cloneNode(true);
-            newRow.querySelectorAll('input').forEach(i => i.value = '');
-            newRow.querySelector('.qty').value = 1;
-            newRow.querySelector('.weight').value = 0;
-            newRow.querySelector('.mc').value = 0;
+            newRow.querySelectorAll('input').forEach(i => {
+                if (i.classList.contains('hsn')) i.value = '7113';
+                else if (i.classList.contains('mc')) i.value = '0';
+                else i.value = '';
+            });
+            newRow.querySelector('.metal-type').value = 'Pure Gold';
+            newRow.querySelector('.total').innerText = '0.00';
             newRow.cells[0].innerText = tbody.rows.length + 1;
             tbody.appendChild(newRow);
+            // Auto-fill rate for the new row
+            onMetalTypeChange(newRow.querySelector('.metal-type'));
         }
 
         function removeRow(btn) {
@@ -665,7 +1357,42 @@
             return str + "Rupees";
         }
 
-        window.onload = updateQRCode;
+        // Enter key in admin password field
+        document.getElementById('adminPassword').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') verifyAdmin();
+        });
+
+        // ===== METAL RATE SYSTEM =====
+        function getRateForMetal(metalType) {
+            const stored = localStorage.getItem('metalRates');
+            if (!stored) return 0;
+            const rates = JSON.parse(stored);
+            switch (metalType) {
+                case 'Pure Gold': return rates.pureGold || 0;
+                case 'Pure Silver': return rates.pureSilver || 0;
+                case 'Gold(22K)': return rates.gold22k || 0;
+                case 'Silver(925)': return rates.silver925 || 0;
+                default: return 0;
+            }
+        }
+
+        function onMetalTypeChange(selectElement) {
+            const row = selectElement.closest('tr');
+            const metalType = selectElement.value;
+            const rate = getRateForMetal(metalType);
+            row.querySelector('.rate').value = rate > 0 ? rate.toFixed(2) : '';
+            calculate(selectElement);
+        }
+
+        function loadRatesForAllRows() {
+            document.querySelectorAll('#invoiceItems tr').forEach(row => {
+                const metalSelect = row.querySelector('.metal-type');
+                if (metalSelect) {
+                    const rate = getRateForMetal(metalSelect.value);
+                    row.querySelector('.rate').value = rate > 0 ? rate.toFixed(2) : '';
+                }
+            });
+        }
     </script>
 </body>
 

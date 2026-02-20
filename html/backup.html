@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Backup - Manti ERP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap');
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f3f4f6;
+        }
+
+        :root {
+            --manti-blue: #2A2C7A;
+            --manti-dark: #414142;
+        }
+
+        .bg-manti-blue {
+            background-color: var(--manti-blue);
+        }
+
+        .text-manti-blue {
+            color: var(--manti-blue);
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            z-index: 99999;
+            animation: toastIn 0.3s ease, toastOut 0.3s ease 2.7s;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .toast-success {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+        }
+
+        .toast-error {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        .toast-warning {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+
+        @keyframes toastIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes toastOut {
+            from {
+                opacity: 1;
+            }
+
+            to {
+                opacity: 0;
+            }
+        }
+
+        .backup-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .backup-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-box {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 480px;
+            width: 90%;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+            animation: modalIn 0.3s ease;
+        }
+
+        @keyframes modalIn {
+            from {
+                transform: scale(0.9);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .drop-zone {
+            border: 3px dashed #d1d5db;
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .drop-zone:hover,
+        .drop-zone.drag-over {
+            border-color: var(--manti-blue);
+            background: rgba(42, 44, 122, 0.05);
+        }
+    </style>
+</head>
+
+<body class="text-gray-900 text-sm">
+
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-slate-900 text-white hidden md:flex flex-col">
+            <div class="p-6 border-b border-slate-800">
+                <a href="dashboard.html" class="text-xl font-bold tracking-widest text-amber-500 uppercase">MANTI
+                    ERP</a>
+            </div>
+            <nav class="flex-1 px-4 py-4 space-y-2">
+                <a href="dashboard.html"
+                    class="flex items-center px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800">
+                    <span class="mr-3">📊</span> Dashboard</a>
+                <a href="create-invoice.html"
+                    class="flex items-center px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800">
+                    <span class="mr-3">🧾</span> New Invoice</a>
+                <a href="rate-update.html"
+                    class="flex items-center px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800">
+                    <span class="mr-3">💰</span> Rate Update</a>
+                <a href="products.html"
+                    class="flex items-center px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800">
+                    <span class="mr-3">💍</span> Products</a>
+                <a href="backup.html"
+                    class="flex items-center px-4 py-3 rounded-lg bg-slate-800 text-white font-medium border-l-4 border-amber-500">
+                    <span class="mr-3">💾</span> Data Backup</a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto p-4 md:p-8">
+            <div class="max-w-4xl mx-auto">
+                <!-- Page Header -->
+                <div class="mb-8">
+                    <h1 class="text-3xl font-bold text-gray-800">💾 Data Backup & Restore</h1>
+                    <p class="text-gray-500 mt-1">Export all your data or restore from a previous backup</p>
+                </div>
+
+                <!-- Data Summary -->
+                <div class="backup-card p-6 mb-6">
+                    <h2 class="text-lg font-bold text-gray-800 mb-4">📊 Current Data Summary</h2>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="bg-indigo-50 rounded-xl p-4 text-center">
+                            <p class="text-3xl font-bold text-manti-blue" id="totalInvoices">0</p>
+                            <p class="text-xs text-gray-500 mt-1">Saved Invoices</p>
+                        </div>
+                        <div class="bg-amber-50 rounded-xl p-4 text-center">
+                            <p class="text-3xl font-bold text-amber-600" id="metalRatesStatus">—</p>
+                            <p class="text-xs text-gray-500 mt-1">Metal Rates</p>
+                        </div>
+                        <div class="bg-green-50 rounded-xl p-4 text-center">
+                            <p class="text-3xl font-bold text-green-600" id="lastInvNum">—</p>
+                            <p class="text-xs text-gray-500 mt-1">Last Inv. No</p>
+                        </div>
+                        <div class="bg-purple-50 rounded-xl p-4 text-center">
+                            <p class="text-3xl font-bold text-purple-600" id="dataSize">0 KB</p>
+                            <p class="text-xs text-gray-500 mt-1">Data Size</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Export & Import Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <!-- Export -->
+                    <div class="backup-card p-8 text-center">
+                        <div class="text-6xl mb-4">📤</div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">Export Backup</h3>
+                        <p class="text-sm text-gray-500 mb-6">Download all your data as a JSON file. Keep this file safe
+                            — you can restore from it anytime.</p>
+                        <button onclick="exportBackup()"
+                            class="w-full px-6 py-4 bg-manti-blue text-white rounded-xl font-bold text-base hover:bg-indigo-800 transition shadow-lg flex items-center justify-center gap-2">
+                            <span>⬇️</span> Download Backup File
+                        </button>
+                        <p class="text-[11px] text-gray-400 mt-3" id="lastExportDate">No previous export</p>
+                    </div>
+
+                    <!-- Import -->
+                    <div class="backup-card p-8 text-center">
+                        <div class="text-6xl mb-4">📥</div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">Restore Backup</h3>
+                        <p class="text-sm text-gray-500 mb-6">Upload a previously exported backup file to restore all
+                            your data. This will replace current data.</p>
+                        <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()"
+                            ondragover="event.preventDefault(); this.classList.add('drag-over')"
+                            ondragleave="this.classList.remove('drag-over')"
+                            ondrop="event.preventDefault(); this.classList.remove('drag-over'); handleFile(event.dataTransfer.files[0])">
+                            <p class="text-3xl mb-2">📁</p>
+                            <p class="font-bold text-gray-600">Drop backup file here</p>
+                            <p class="text-xs text-gray-400 mt-1">or click to browse</p>
+                        </div>
+                        <input type="file" id="fileInput" accept=".json" class="hidden"
+                            onchange="handleFile(this.files[0])">
+                    </div>
+                </div>
+
+                <!-- Danger Zone -->
+                <div class="backup-card p-6 border-2 border-red-200">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="text-2xl">⚠️</span>
+                        <div>
+                            <h3 class="text-lg font-bold text-red-600">Danger Zone</h3>
+                            <p class="text-xs text-gray-500">These actions cannot be undone. Export a backup first!</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-4">
+                        <button onclick="confirmClearInvoices()"
+                            class="px-4 py-2 bg-red-100 text-red-600 rounded-lg font-medium hover:bg-red-200 transition text-sm">
+                            🗑️ Clear All Invoices
+                        </button>
+                        <button onclick="confirmClearAll()"
+                            class="px-4 py-2 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition text-sm">
+                            💥 Clear ALL Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div id="confirmModal" class="modal-overlay">
+        <div class="modal-box text-center">
+            <div class="text-5xl mb-4">⚠️</div>
+            <h2 class="text-xl font-bold text-gray-800 mb-2" id="confirmTitle">Are you sure?</h2>
+            <p class="text-sm text-gray-500 mb-6" id="confirmMessage">This action cannot be undone.</p>
+            <div class="flex gap-3">
+                <button onclick="closeConfirmModal()"
+                    class="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 font-medium">Cancel</button>
+                <button id="confirmBtn" onclick=""
+                    class="flex-1 px-4 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 font-medium">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Restore Preview Modal -->
+    <div id="restoreModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="text-center mb-4">
+                <div class="text-5xl mb-2">📥</div>
+                <h2 class="text-xl font-bold text-gray-800">Restore Preview</h2>
+            </div>
+            <div class="bg-gray-50 rounded-xl p-4 mb-4 text-sm" id="restorePreview"></div>
+            <p class="text-xs text-red-500 font-medium mb-4 text-center">⚠️ This will REPLACE all your current data!</p>
+            <div class="flex gap-3">
+                <button onclick="closeRestoreModal()"
+                    class="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 font-medium">Cancel</button>
+                <button onclick="executeRestore()"
+                    class="flex-1 px-4 py-3 bg-manti-blue text-white rounded-xl hover:bg-indigo-800 font-medium">✅
+                    Restore Data</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let pendingRestoreData = null;
+
+        // ===== DATA SUMMARY =====
+        function updateDataSummary() {
+            // Invoices count
+            const invoices = JSON.parse(localStorage.getItem('invoices') || '[]');
+            document.getElementById('totalInvoices').textContent = invoices.length;
+
+            // Metal rates status
+            const rates = localStorage.getItem('metalRates');
+            document.getElementById('metalRatesStatus').textContent = rates ? '✅' : '❌';
+
+            // Last invoice number
+            const lastNum = localStorage.getItem('lastInvoiceNumber');
+            document.getElementById('lastInvNum').textContent = lastNum ? 'INV-' + String(lastNum).padStart(5, '0') : '—';
+
+            // Data size
+            let totalSize = 0;
+            for (let key in localStorage) {
+                if (localStorage.hasOwnProperty(key)) {
+                    totalSize += localStorage.getItem(key).length * 2; // UTF-16 chars = 2 bytes
+                }
+            }
+            const sizeKB = (totalSize / 1024).toFixed(1);
+            document.getElementById('dataSize').textContent = sizeKB + ' KB';
+
+            // Last export
+            const lastExport = localStorage.getItem('lastExportDate');
+            if (lastExport) {
+                const d = new Date(lastExport);
+                document.getElementById('lastExportDate').textContent = 'Last export: ' +
+                    d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' +
+                    d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+            }
+        }
+
+        // ===== EXPORT =====
+        function exportBackup() {
+            const backup = {
+                appName: 'Manti ERP',
+                version: '1.0',
+                exportDate: new Date().toISOString(),
+                data: {}
+            };
+
+            // Collect all localStorage items
+            const keysToBackup = ['invoices', 'metalRates', 'lastInvoiceNumber'];
+            keysToBackup.forEach(key => {
+                const val = localStorage.getItem(key);
+                if (val) {
+                    try {
+                        backup.data[key] = JSON.parse(val);
+                    } catch {
+                        backup.data[key] = val;
+                    }
+                }
+            });
+
+            // Generate filename with date
+            const now = new Date();
+            const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+            const timeStr = now.toTimeString().slice(0, 5).replace(':', '');
+            const filename = `MantiERP_Backup_${dateStr}_${timeStr}.json`;
+
+            // Download
+            const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            // Save export date
+            localStorage.setItem('lastExportDate', new Date().toISOString());
+            updateDataSummary();
+
+            showToast('Backup exported: ' + filename, 'success');
+        }
+
+        // ===== IMPORT =====
+        function handleFile(file) {
+            if (!file) return;
+            if (!file.name.endsWith('.json')) {
+                showToast('Please select a .json backup file', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+
+                    // Validate backup file
+                    if (!data.appName || data.appName !== 'Manti ERP') {
+                        showToast('Invalid backup file — not a Manti ERP backup', 'error');
+                        return;
+                    }
+
+                    pendingRestoreData = data;
+
+                    // Show preview
+                    const invoiceCount = data.data.invoices ? data.data.invoices.length : 0;
+                    const hasRates = data.data.metalRates ? true : false;
+                    const lastInv = data.data.lastInvoiceNumber || '—';
+                    const exportDate = new Date(data.exportDate).toLocaleString('en-IN');
+
+                    document.getElementById('restorePreview').innerHTML = `
+                        <div class="grid grid-cols-2 gap-3">
+                            <div><span class="font-bold">📅 Export Date:</span></div>
+                            <div>${exportDate}</div>
+                            <div><span class="font-bold">🧾 Invoices:</span></div>
+                            <div>${invoiceCount}</div>
+                            <div><span class="font-bold">💰 Metal Rates:</span></div>
+                            <div>${hasRates ? '✅ Included' : '❌ Not included'}</div>
+                            <div><span class="font-bold"># Last Inv No:</span></div>
+                            <div>${typeof lastInv === 'number' ? 'INV-' + String(lastInv).padStart(5, '0') : lastInv}</div>
+                        </div>
+                    `;
+
+                    document.getElementById('restoreModal').classList.add('active');
+                } catch (err) {
+                    showToast('Error reading backup file: ' + err.message, 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function executeRestore() {
+            if (!pendingRestoreData) return;
+
+            const data = pendingRestoreData.data;
+
+            // Restore each key
+            if (data.invoices) localStorage.setItem('invoices', JSON.stringify(data.invoices));
+            if (data.metalRates) localStorage.setItem('metalRates', JSON.stringify(data.metalRates));
+            if (data.lastInvoiceNumber !== undefined) localStorage.setItem('lastInvoiceNumber', data.lastInvoiceNumber.toString());
+
+            closeRestoreModal();
+            updateDataSummary();
+            showToast('Data restored successfully from backup!', 'success');
+            pendingRestoreData = null;
+        }
+
+        function closeRestoreModal() {
+            document.getElementById('restoreModal').classList.remove('active');
+        }
+
+        // ===== DANGER ZONE =====
+        function confirmClearInvoices() {
+            document.getElementById('confirmTitle').textContent = 'Clear All Invoices?';
+            document.getElementById('confirmMessage').textContent = 'This will permanently delete all ' +
+                (JSON.parse(localStorage.getItem('invoices') || '[]')).length + ' saved invoices. Export a backup first!';
+            document.getElementById('confirmBtn').onclick = function () {
+                localStorage.removeItem('invoices');
+                localStorage.removeItem('lastInvoiceNumber');
+                closeConfirmModal();
+                updateDataSummary();
+                showToast('All invoices cleared', 'warning');
+            };
+            document.getElementById('confirmModal').classList.add('active');
+        }
+
+        function confirmClearAll() {
+            document.getElementById('confirmTitle').textContent = 'Clear ALL Data?';
+            document.getElementById('confirmMessage').textContent = 'This will permanently delete ALL data including invoices, metal rates, and settings. This cannot be undone!';
+            document.getElementById('confirmBtn').onclick = function () {
+                localStorage.clear();
+                closeConfirmModal();
+                updateDataSummary();
+                showToast('All data cleared', 'warning');
+            };
+            document.getElementById('confirmModal').classList.add('active');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').classList.remove('active');
+        }
+
+        // ===== UI HELPERS =====
+        function showToast(message, type) {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // ===== INIT =====
+        window.onload = updateDataSummary;
+    </script>
+</body>
+
+</html>

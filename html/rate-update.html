@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rate Update - Manti ERP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap');
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f3f4f6;
+        }
+
+        :root {
+            --manti-blue: #2A2C7A;
+            --manti-dark: #414142;
+        }
+
+        .bg-manti-blue {
+            background-color: var(--manti-blue);
+        }
+
+        .text-manti-blue {
+            color: var(--manti-blue);
+        }
+
+        .bg-manti-orange-gradient {
+            background: linear-gradient(90deg, #df2726 0%, #e63e2e 42%, #f2673d 100%);
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            z-index: 99999;
+            animation: toastIn 0.3s ease, toastOut 0.3s ease 2.7s;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .toast-success {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+        }
+
+        .toast-error {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        @keyframes toastIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes toastOut {
+            from {
+                opacity: 1;
+            }
+
+            to {
+                opacity: 0;
+            }
+        }
+
+        .rate-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .rate-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        }
+
+        .rate-input {
+            font-size: 28px;
+            font-weight: 700;
+            text-align: center;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 12px;
+            width: 100%;
+            transition: border-color 0.2s;
+        }
+
+        .rate-input:focus {
+            border-color: var(--manti-blue);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(42, 44, 122, 0.1);
+        }
+
+        .calculated-rate {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--manti-blue);
+        }
+
+        .gold-gradient {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+
+        .silver-gradient {
+            background: linear-gradient(135deg, #9ca3af, #6b7280);
+        }
+
+        .gold22k-gradient {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+        }
+
+        .silver925-gradient {
+            background: linear-gradient(135deg, #d1d5db, #9ca3af);
+        }
+    </style>
+</head>
+
+<body class="text-gray-900 text-sm">
+
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-slate-900 text-white hidden md:flex flex-col">
+            <div class="p-6 border-b border-slate-800">
+                <a href="dashboard.html" class="text-xl font-bold tracking-widest text-amber-500 uppercase">MANTI
+                    ERP</a>
+            </div>
+            <nav class="flex-1 px-4 py-4 space-y-2">
+                <a href="dashboard.html"
+                    class="flex items-center px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800"><span
+                        class="mr-3">📊</span> Dashboard</a>
+                <a href="create-invoice.html"
+                    class="flex items-center px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800"><span
+                        class="mr-3">🧾</span> New Invoice</a>
+                <a href="rate-update.html"
+                    class="flex items-center px-4 py-3 rounded-lg bg-slate-800 text-white font-medium border-l-4 border-amber-500"><span
+                        class="mr-3">💰</span> Rate Update</a>
+                <a href="products.html"
+                    class="flex items-center px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800"><span
+                        class="mr-3">💍</span> Products</a>
+                <a href="backup.html"
+                    class="flex items-center px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800"><span
+                        class="mr-3">💾</span> Data Backup</a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto p-4 md:p-8">
+            <div class="max-w-4xl mx-auto">
+                <!-- Page Header -->
+                <div class="flex justify-between items-center mb-8">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-800">💰 Rate Update</h1>
+                        <p class="text-gray-500 mt-1">Update today's metal rates per gram</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm text-gray-500">Last Updated</p>
+                        <p class="text-sm font-bold text-manti-blue" id="lastUpdated">Never</p>
+                    </div>
+                </div>
+
+                <!-- Manual Input Rates -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <!-- Pure Gold -->
+                    <div class="rate-card p-6">
+                        <div class="flex items-center mb-4">
+                            <div
+                                class="w-12 h-12 rounded-xl gold-gradient flex items-center justify-center text-white text-xl mr-4">
+                                🥇
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-lg text-gray-800">Pure Gold (24K)</h3>
+                                <p class="text-xs text-gray-500">Rate per gram — Enter manually</p>
+                            </div>
+                        </div>
+                        <div class="relative">
+                            <span
+                                class="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-bold text-gray-400">₹</span>
+                            <input type="number" id="pureGoldRate" class="rate-input pl-10" placeholder="0.00"
+                                oninput="calculateDerivedRates()">
+                        </div>
+                    </div>
+
+                    <!-- Pure Silver -->
+                    <div class="rate-card p-6">
+                        <div class="flex items-center mb-4">
+                            <div
+                                class="w-12 h-12 rounded-xl silver-gradient flex items-center justify-center text-white text-xl mr-4">
+                                🥈
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-lg text-gray-800">Pure Silver</h3>
+                                <p class="text-xs text-gray-500">Rate per gram — Enter manually</p>
+                            </div>
+                        </div>
+                        <div class="relative">
+                            <span
+                                class="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-bold text-gray-400">₹</span>
+                            <input type="number" id="pureSilverRate" class="rate-input pl-10" placeholder="0.00"
+                                oninput="calculateDerivedRates()">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Auto-Calculated Rates -->
+                <h2 class="text-xl font-bold text-gray-800 mb-4">📐 Auto-Calculated Rates</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <!-- Gold 22K -->
+                    <div class="rate-card p-6 border-l-4 border-amber-400">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <div
+                                    class="w-10 h-10 rounded-lg gold22k-gradient flex items-center justify-center text-white text-sm mr-3">
+                                    22K
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-gray-800">Gold (22K)</h3>
+                                    <p class="text-[11px] text-gray-500">Pure Gold × 0.916</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="calculated-rate" id="gold22kRate">₹ 0.00</p>
+                                <p class="text-[11px] text-gray-500">per gram</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Silver 925 -->
+                    <div class="rate-card p-6 border-l-4 border-gray-400">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <div
+                                    class="w-10 h-10 rounded-lg silver925-gradient flex items-center justify-center text-white text-sm mr-3">
+                                    925
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-gray-800">Silver (925)</h3>
+                                    <p class="text-[11px] text-gray-500">Pure Silver × 0.925</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="calculated-rate" id="silver925Rate">₹ 0.00</p>
+                                <p class="text-[11px] text-gray-500">per gram</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- All Rates Summary -->
+                <div class="rate-card p-6 mb-6">
+                    <h2 class="text-lg font-bold text-gray-800 mb-4">📊 Today's Rate Summary</h2>
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="bg-slate-100 text-gray-600">
+                                <th class="text-left py-3 px-4 rounded-l-lg">Metal Type</th>
+                                <th class="text-center py-3 px-4">Purity</th>
+                                <th class="text-center py-3 px-4">Formula</th>
+                                <th class="text-right py-3 px-4 rounded-r-lg">Rate / gram</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rateSummaryBody">
+                            <tr class="border-b border-gray-100">
+                                <td class="py-3 px-4 font-bold">🥇 Pure Gold</td>
+                                <td class="text-center py-3 px-4">99.9%</td>
+                                <td class="text-center py-3 px-4 text-gray-500">Manual Entry</td>
+                                <td class="text-right py-3 px-4 font-bold text-amber-600" id="summaryPureGold">₹ 0.00
+                                </td>
+                            </tr>
+                            <tr class="border-b border-gray-100">
+                                <td class="py-3 px-4 font-bold">✨ Gold (22K)</td>
+                                <td class="text-center py-3 px-4">91.6%</td>
+                                <td class="text-center py-3 px-4 text-gray-500">Pure Gold × 0.916</td>
+                                <td class="text-right py-3 px-4 font-bold text-amber-500" id="summaryGold22k">₹ 0.00
+                                </td>
+                            </tr>
+                            <tr class="border-b border-gray-100">
+                                <td class="py-3 px-4 font-bold">🥈 Pure Silver</td>
+                                <td class="text-center py-3 px-4">99.9%</td>
+                                <td class="text-center py-3 px-4 text-gray-500">Manual Entry</td>
+                                <td class="text-right py-3 px-4 font-bold text-gray-600" id="summaryPureSilver">₹ 0.00
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="py-3 px-4 font-bold">💎 Silver (925)</td>
+                                <td class="text-center py-3 px-4">92.5%</td>
+                                <td class="text-center py-3 px-4 text-gray-500">Pure Silver × 0.925</td>
+                                <td class="text-right py-3 px-4 font-bold text-gray-500" id="summarySilver925">₹ 0.00
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Save Button -->
+                <div class="flex justify-center">
+                    <button onclick="saveRates()"
+                        class="px-10 py-4 bg-manti-blue text-white rounded-xl font-bold text-lg hover:bg-indigo-800 transition shadow-xl hover:shadow-2xl flex items-center gap-3">
+                        <span class="text-2xl">💾</span> Save Today's Rates
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/cloud-sync.js"></script>
+
+    <script>
+        function calculateDerivedRates() {
+            const pureGold = parseFloat(document.getElementById('pureGoldRate').value) || 0;
+            const pureSilver = parseFloat(document.getElementById('pureSilverRate').value) || 0;
+
+            const gold22k = pureGold * 0.916;
+            const silver925 = pureSilver * 0.925;
+
+            // Update cards
+            document.getElementById('gold22kRate').textContent = '₹ ' + gold22k.toFixed(2);
+            document.getElementById('silver925Rate').textContent = '₹ ' + silver925.toFixed(2);
+
+            // Update summary table
+            document.getElementById('summaryPureGold').textContent = '₹ ' + pureGold.toFixed(2);
+            document.getElementById('summaryGold22k').textContent = '₹ ' + gold22k.toFixed(2);
+            document.getElementById('summaryPureSilver').textContent = '₹ ' + pureSilver.toFixed(2);
+            document.getElementById('summarySilver925').textContent = '₹ ' + silver925.toFixed(2);
+        }
+
+        function saveRates() {
+            const pureGold = parseFloat(document.getElementById('pureGoldRate').value) || 0;
+            const pureSilver = parseFloat(document.getElementById('pureSilverRate').value) || 0;
+
+            if (pureGold === 0 && pureSilver === 0) {
+                showToast('Please enter at least one rate', 'error');
+                return;
+            }
+
+            const rates = {
+                pureGold: pureGold,
+                pureSilver: pureSilver,
+                gold22k: pureGold * 0.916,
+                silver925: pureSilver * 0.925,
+                updatedAt: new Date().toISOString()
+            };
+
+            // Use CloudSync to save
+            CloudSync.saveRates(rates);
+            updateLastUpdated(rates.updatedAt);
+            showToast('Rates saved successfully!', 'success');
+        }
+
+        function loadRates() {
+            const stored = localStorage.getItem('metalRates');
+            if (stored) {
+                const rates = JSON.parse(stored);
+                document.getElementById('pureGoldRate').value = rates.pureGold || '';
+                document.getElementById('pureSilverRate').value = rates.pureSilver || '';
+                calculateDerivedRates();
+                if (rates.updatedAt) updateLastUpdated(rates.updatedAt);
+            }
+        }
+
+        function updateLastUpdated(isoDate) {
+            const d = new Date(isoDate);
+            const formatted = d.toLocaleDateString('en-IN', {
+                day: '2-digit', month: 'short', year: 'numeric'
+            }) + ' ' + d.toLocaleTimeString('en-IN', {
+                hour: '2-digit', minute: '2-digit'
+            });
+            document.getElementById('lastUpdated').textContent = formatted;
+        }
+
+        function showToast(message, type) {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // Init
+        window.onload = loadRates;
+    </script>
+</body>
+
+</html>

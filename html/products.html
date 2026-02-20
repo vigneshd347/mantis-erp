@@ -83,48 +83,51 @@
                             <th class="px-6 py-3"></th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-200">
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4 text-sm font-medium text-gray-900">Gold Ring (Men's Classic)</td>
-                            <td class="px-6 py-4 text-sm text-gray-500">Gold</td>
-                            <td class="px-6 py-4 text-sm text-gray-500"><span
-                                    class="px-2 py-1 bg-amber-100 text-amber-800 rounded-full text-xs">22k</span></td>
-                            <td class="px-6 py-4 text-sm text-gray-900 text-right font-bold">12</td>
-                            <td class="px-6 py-4 text-sm text-gray-500 text-right">5.500</td>
-                            <td class="px-6 py-4 text-sm text-gray-500 text-right">₹500.00</td>
-                            <td class="px-6 py-4 text-right text-sm font-medium">
-                                <a href="#" class="text-indigo-600 hover:text-indigo-900">Edit</a>
-                            </td>
-                        </tr>
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4 text-sm font-medium text-gray-900">Gold Chain (Rope Design)</td>
-                            <td class="px-6 py-4 text-sm text-gray-500">Gold</td>
-                            <td class="px-6 py-4 text-sm text-gray-500"><span
-                                    class="px-2 py-1 bg-amber-100 text-amber-800 rounded-full text-xs">22k</span></td>
-                            <td class="px-6 py-4 text-sm text-gray-900 text-right font-bold">5</td>
-                            <td class="px-6 py-4 text-sm text-gray-500 text-right">12.200</td>
-                            <td class="px-6 py-4 text-sm text-gray-500 text-right">₹1,200.00</td>
-                            <td class="px-6 py-4 text-right text-sm font-medium">
-                                <a href="#" class="text-indigo-600 hover:text-indigo-900">Edit</a>
-                            </td>
-                        </tr>
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4 text-sm font-medium text-gray-900">Silver Anklets</td>
-                            <td class="px-6 py-4 text-sm text-gray-500">Silver</td>
-                            <td class="px-6 py-4 text-sm text-gray-500"><span
-                                    class="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">925</span></td>
-                            <td class="px-6 py-4 text-sm text-gray-900 text-right font-bold">50</td>
-                            <td class="px-6 py-4 text-sm text-gray-500 text-right">25.000</td>
-                            <td class="px-6 py-4 text-sm text-gray-500 text-right">₹250.00</td>
-                            <td class="px-6 py-4 text-right text-sm font-medium">
-                                <a href="#" class="text-indigo-600 hover:text-indigo-900">Edit</a>
-                            </td>
-                        </tr>
+                    <tbody id="productTableBody" class="divide-y divide-gray-200">
+                        <!-- Dynamic content -->
                     </tbody>
                 </table>
             </div>
         </main>
     </div>
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/cloud-sync.js"></script>
+    <script>
+        async function loadProducts() {
+            const products = await CloudSync.fetchProducts();
+            const tbody = document.getElementById('productTableBody');
+            tbody.innerHTML = '';
+
+            if (products.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="px-6 py-10 text-center text-gray-500 italic">No products found.</td></tr>`;
+                return;
+            }
+
+            products.forEach(p => {
+                const purityClass = p.metalType.toLowerCase() === 'gold' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-800';
+                const row = `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 text-sm font-medium text-gray-900">${p.name}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500">${p.metalType}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500">
+                            <span class="px-2 py-1 ${purityClass} rounded-full text-xs">${p.purity}</span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-900 text-right font-bold">${p.stock}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500 text-right">${p.netWeight.toFixed(3)}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500 text-right">${p.mc_type === 'percent' ? p.mc_value + '%' : '₹' + p.mc_value}</td>
+                        <td class="px-6 py-4 text-right text-sm font-medium">
+                            <a href="#" class="text-indigo-600 hover:text-indigo-900">Edit</a>
+                        </td>
+                    </tr>
+                `;
+                tbody.insertAdjacentHTML('beforeend', row);
+            });
+        }
+
+        window.onload = loadProducts;
+    </script>
 </body>
 
 </html>

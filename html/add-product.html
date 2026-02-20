@@ -136,10 +136,30 @@
         </main>
     </div>
 
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/cloud-sync.js"></script>
+
     <script>
         function saveProduct(e) {
             e.preventDefault();
-            alert('Product Saved Successfully! (Demo Mode)');
+            const form = e.target;
+            const product = {
+                name: form.elements[0].value,
+                metalType: form.elements[1].value,
+                purity: form.elements[2].value,
+                hsn: form.elements[3].value,
+                grossWeight: parseFloat(form.elements[4].value) || 0,
+                netWeight: parseFloat(form.elements[5].value) || 0,
+                mc_type: document.getElementById('mc_type').value,
+                mc_value: parseFloat(document.getElementById('mc_value').value) || 0,
+                stock: parseInt(form.elements[7].value) || 0,
+                createdAt: new Date().toISOString()
+            };
+
+            CloudSync.saveProduct(product);
+            alert('Product Saved Successfully!');
             window.location.href = 'products.html';
         }
     </script>

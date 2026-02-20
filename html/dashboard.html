@@ -153,13 +153,9 @@
                         <div class="absolute right-0 top-0 h-full w-1 bg-amber-500"></div>
                         <div class="text-slate-400 text-sm font-medium uppercase tracking-wider mb-2">Today's Sales
                             (Gold)</div>
-                        <div class="text-3xl font-bold text-white mb-1">₹4,25,000</div>
+                        <div class="text-3xl font-bold text-white mb-1" id="dashTodaySales">₹0</div>
                         <div class="text-green-400 text-xs font-semibold flex items-center">
-                            <svg class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M5 10l7-7m0 0l7 7m-7-7v18" />
-                            </svg>
-                            +12.5% from yesterday
+                            Calculated from invoices
                         </div>
                     </div>
 
@@ -169,9 +165,9 @@
                         <div class="absolute right-0 top-0 h-full w-1 bg-blue-500"></div>
                         <div class="text-slate-400 text-sm font-medium uppercase tracking-wider mb-2">Monthly Revenue
                         </div>
-                        <div class="text-3xl font-bold text-white mb-1">₹85,42,000</div>
+                        <div class="text-3xl font-bold text-white mb-1" id="dashMonthlyRevenue">₹0</div>
                         <div class="text-blue-400 text-xs font-semibold flex items-center">
-                            Target: ₹1 Cr
+                            Current Month
                         </div>
                     </div>
 
@@ -193,103 +189,164 @@
                         <div class="absolute right-0 top-0 h-full w-1 bg-purple-500"></div>
                         <div class="text-slate-400 text-sm font-medium uppercase tracking-wider mb-2">Low Stock Alert
                         </div>
-                        <div class="text-3xl font-bold text-white mb-1">8 Items</div>
+                        <div class="text-3xl font-bold text-white mb-1" id="dashLowStock">0 Items</div>
                         <div class="text-purple-400 text-xs font-semibold flex items-center">
-                            Restock Required
+                            Stock < 5 units </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Charts & Recent Sales -->
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-                    <!-- Chart -->
-                    <div class="lg:col-span-2 bg-slate-800 rounded-xl shadow-xl border border-slate-700 p-6">
-                        <h3 class="text-lg font-bold text-white mb-4">Sales Analytics (Last 7 Days)</h3>
-                        <canvas id="salesChart" height="250"></canvas>
-                    </div>
-
-                    <!-- Recent Transactions -->
-                    <div class="bg-slate-800 rounded-xl shadow-xl border border-slate-700 p-6">
-                        <h3 class="text-lg font-bold text-white mb-4">Recent Transactions</h3>
-                        <div class="space-y-4">
-                            <!-- Item -->
+                    <!-- Live Metal Rates Section -->
+                    <div class="mb-8">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                                <span class="text-amber-500">💰</span> Live Metal Rates
+                            </h2>
+                            <a href="rate-update.html"
+                                class="text-amber-500 hover:text-amber-400 text-sm font-semibold flex items-center gap-1 transition-colors">
+                                Update Rates <span>→</span>
+                            </a>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <!-- Gold 24K -->
                             <div
-                                class="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg hover:bg-slate-700 transition-colors cursor-pointer">
-                                <div class="flex items-center">
-                                    <div
-                                        class="h-10 w-10 rounded-full bg-slate-900 flex items-center justify-center text-amber-500 font-bold">
-                                        R</div>
-                                    <div class="ml-3">
-                                        <p class="text-sm font-medium text-white">Ramesh Kumar</p>
-                                        <p class="text-xs text-slate-400">INV-00124 • Today</p>
-                                    </div>
+                                class="bg-slate-800 rounded-xl p-5 border border-slate-700 shadow-xl group hover:border-amber-500/30 transition-all">
+                                <div class="flex items-center justify-between mb-3">
+                                    <span class="text-amber-500 text-xl">🥇</span>
+                                    <span class="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">Gold
+                                        24K</span>
                                 </div>
-                                <div class="text-right">
-                                    <p class="text-sm font-bold text-white">₹45,200</p>
-                                    <p class="text-xs text-green-400">Paid</p>
-                                </div>
+                                <div class="text-2xl font-black text-white" id="dashGold24K">₹ 0.00</div>
+                                <div class="text-[10px] text-slate-400 mt-1">Pure Gold per gram</div>
                             </div>
-                            <!-- Item -->
+                            <!-- Gold 22K -->
                             <div
-                                class="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg hover:bg-slate-700 transition-colors cursor-pointer">
-                                <div class="flex items-center">
-                                    <div
-                                        class="h-10 w-10 rounded-full bg-slate-900 flex items-center justify-center text-amber-500 font-bold">
-                                        S</div>
-                                    <div class="ml-3">
-                                        <p class="text-sm font-medium text-white">Sneha Patel</p>
-                                        <p class="text-xs text-slate-400">INV-00123 • Yesterday</p>
-                                    </div>
+                                class="bg-slate-800 rounded-xl p-5 border border-slate-700 shadow-xl group hover:border-amber-400/30 transition-all">
+                                <div class="flex items-center justify-between mb-3">
+                                    <span class="text-amber-400 text-xl">✨</span>
+                                    <span class="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">Gold
+                                        22K</span>
                                 </div>
-                                <div class="text-right">
-                                    <p class="text-sm font-bold text-white">₹1,12,500</p>
-                                    <p class="text-xs text-red-400">Unpaid</p>
-                                </div>
+                                <div class="text-2xl font-black text-white" id="dashGold22K">₹ 0.00</div>
+                                <div class="text-[10px] text-slate-400 mt-1">91.6% purity per gram</div>
                             </div>
-                            <!-- Item -->
+                            <!-- Silver Pure -->
                             <div
-                                class="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg hover:bg-slate-700 transition-colors cursor-pointer">
-                                <div class="flex items-center">
-                                    <div
-                                        class="h-10 w-10 rounded-full bg-slate-900 flex items-center justify-center text-amber-500 font-bold">
-                                        V</div>
-                                    <div class="ml-3">
-                                        <p class="text-sm font-medium text-white">Vijay Seth</p>
-                                        <p class="text-xs text-slate-400">INV-00122 • Yesterday</p>
-                                    </div>
+                                class="bg-slate-800 rounded-xl p-5 border border-slate-700 shadow-xl group hover:border-slate-400/30 transition-all">
+                                <div class="flex items-center justify-between mb-3">
+                                    <span class="text-slate-400 text-xl">🥈</span>
+                                    <span class="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">Pure
+                                        Silver</span>
                                 </div>
-                                <div class="text-right">
-                                    <p class="text-sm font-bold text-white">₹28,000</p>
-                                    <p class="text-xs text-green-400">Paid</p>
-                                </div>
+                                <div class="text-2xl font-black text-white" id="dashSilverPure">₹ 0.00</div>
+                                <div class="text-[10px] text-slate-400 mt-1">Silver per gram</div>
                             </div>
-                            <!-- Item -->
+                            <!-- Silver 925 -->
                             <div
-                                class="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg hover:bg-slate-700 transition-colors cursor-pointer">
-                                <div class="flex items-center">
-                                    <div
-                                        class="h-10 w-10 rounded-full bg-slate-900 flex items-center justify-center text-amber-500 font-bold">
-                                        M</div>
-                                    <div class="ml-3">
-                                        <p class="text-sm font-medium text-white">Meera Royals</p>
-                                        <p class="text-xs text-slate-400">INV-00121 • 2 Days ago</p>
-                                    </div>
+                                class="bg-slate-800 rounded-xl p-5 border border-slate-700 shadow-xl group hover:border-slate-500/30 transition-all">
+                                <div class="flex items-center justify-between mb-3">
+                                    <span class="text-slate-500 text-xl">💎</span>
+                                    <span class="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">Silver
+                                        925</span>
                                 </div>
-                                <div class="text-right">
-                                    <p class="text-sm font-bold text-white">₹2,50,000</p>
-                                    <p class="text-xs text-yellow-400">Partial</p>
-                                </div>
+                                <div class="text-2xl font-black text-white" id="dashSilver925">₹ 0.00</div>
+                                <div class="text-[10px] text-slate-400 mt-1">92.5% purity per gram</div>
                             </div>
                         </div>
-                        <a href="sales.html"
-                            class="block w-full text-center mt-4 text-sm text-amber-500 hover:text-amber-400 font-medium">View
-                            All Transactions</a>
+
+                        <!-- Charts & Recent Sales -->
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                            <!-- Chart -->
+                            <div class="lg:col-span-2 bg-slate-800 rounded-xl shadow-xl border border-slate-700 p-6">
+                                <h3 class="text-lg font-bold text-white mb-4">Sales Analytics (Last 7 Days)</h3>
+                                <canvas id="salesChart" height="250"></canvas>
+                            </div>
+
+                            <!-- Recent Transactions -->
+                            <div class="bg-slate-800 rounded-xl shadow-xl border border-slate-700 p-6">
+                                <h3 class="text-lg font-bold text-white mb-4">Recent Transactions</h3>
+                                <div class="space-y-4">
+                                    <!-- Item -->
+                                    <div
+                                        class="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg hover:bg-slate-700 transition-colors cursor-pointer">
+                                        <div class="flex items-center">
+                                            <div
+                                                class="h-10 w-10 rounded-full bg-slate-900 flex items-center justify-center text-amber-500 font-bold">
+                                                R</div>
+                                            <div class="ml-3">
+                                                <p class="text-sm font-medium text-white">Ramesh Kumar</p>
+                                                <p class="text-xs text-slate-400">INV-00124 • Today</p>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="text-sm font-bold text-white">₹45,200</p>
+                                            <p class="text-xs text-green-400">Paid</p>
+                                        </div>
+                                    </div>
+                                    <!-- Item -->
+                                    <div
+                                        class="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg hover:bg-slate-700 transition-colors cursor-pointer">
+                                        <div class="flex items-center">
+                                            <div
+                                                class="h-10 w-10 rounded-full bg-slate-900 flex items-center justify-center text-amber-500 font-bold">
+                                                S</div>
+                                            <div class="ml-3">
+                                                <p class="text-sm font-medium text-white">Sneha Patel</p>
+                                                <p class="text-xs text-slate-400">INV-00123 • Yesterday</p>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="text-sm font-bold text-white">₹1,12,500</p>
+                                            <p class="text-xs text-red-400">Unpaid</p>
+                                        </div>
+                                    </div>
+                                    <!-- Item -->
+                                    <div
+                                        class="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg hover:bg-slate-700 transition-colors cursor-pointer">
+                                        <div class="flex items-center">
+                                            <div
+                                                class="h-10 w-10 rounded-full bg-slate-900 flex items-center justify-center text-amber-500 font-bold">
+                                                V</div>
+                                            <div class="ml-3">
+                                                <p class="text-sm font-medium text-white">Vijay Seth</p>
+                                                <p class="text-xs text-slate-400">INV-00122 • Yesterday</p>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="text-sm font-bold text-white">₹28,000</p>
+                                            <p class="text-xs text-green-400">Paid</p>
+                                        </div>
+                                    </div>
+                                    <!-- Item -->
+                                    <div
+                                        class="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg hover:bg-slate-700 transition-colors cursor-pointer">
+                                        <div class="flex items-center">
+                                            <div
+                                                class="h-10 w-10 rounded-full bg-slate-900 flex items-center justify-center text-amber-500 font-bold">
+                                                M</div>
+                                            <div class="ml-3">
+                                                <p class="text-sm font-medium text-white">Meera Royals</p>
+                                                <p class="text-xs text-slate-400">INV-00121 • 2 Days ago</p>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="text-sm font-bold text-white">₹2,50,000</p>
+                                            <p class="text-xs text-yellow-400">Partial</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <a href="sales.html"
+                                    class="block w-full text-center mt-4 text-sm text-amber-500 hover:text-amber-400 font-medium">View
+                                    All Transactions</a>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
         </main>
     </div>
 
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/cloud-sync.js"></script>
     <script>
         // Check Auth
         const user = JSON.parse(localStorage.getItem('manti_user'));
@@ -301,6 +358,81 @@
             localStorage.removeItem('manti_user');
             window.location.href = 'index.html';
         }
+
+        // Load Dashboard Data
+        async function loadDashboardData() {
+            try {
+                // Rates ...
+                const ratesStored = localStorage.getItem('metalRates');
+                if (ratesStored) {
+                    const rates = JSON.parse(ratesStored);
+                    document.getElementById('dashGold24K').textContent = '₹ ' + (rates.pureGold || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 });
+                    document.getElementById('dashGold22K').textContent = '₹ ' + (rates.gold22k || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 });
+                    document.getElementById('dashSilverPure').textContent = '₹ ' + (rates.pureSilver || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 });
+                    document.getElementById('dashSilver925').textContent = '₹ ' + (rates.silver925 || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 });
+                }
+
+                // Invoices & Stats
+                const invoices = await CloudSync.fetchInvoices();
+                const today = new Date().toISOString().split('T')[0];
+                const currentMonth = new Date().getMonth();
+                const currentYear = new Date().getFullYear();
+
+                let todayTotal = 0;
+                let monthTotal = 0;
+                const recentLimit = 4;
+                const recentTransactionsContainer = document.getElementById('recentTransactionsList');
+
+                if (recentTransactionsContainer && invoices.length > 0) {
+                    recentTransactionsContainer.innerHTML = '';
+                    invoices.slice(0, recentLimit).forEach(inv => {
+                        const amount = inv.totals.grandTotal;
+                        const name = inv.billTo.name;
+                        const initial = name.charAt(0);
+                        const invNo = inv.invNo;
+                        const dateDesc = new Date(inv.invDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+
+                        const item = `
+                        <div class="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg hover:bg-slate-700 transition-colors cursor-pointer">
+                            <div class="flex items-center">
+                                <div class="h-10 w-10 rounded-full bg-slate-900 flex items-center justify-center text-amber-500 font-bold">${initial}</div>
+                                <div class="ml-3">
+                                    <p class="text-sm font-medium text-white">${name}</p>
+                                    <p class="text-xs text-slate-400">${invNo} • ${dateDesc}</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm font-bold text-white">${amount}</p>
+                                <p class="text-xs text-green-400">${inv.paymentMode || 'Paid'}</p>
+                            </div>
+                        </div>
+                    `;
+                        recentTransactionsContainer.insertAdjacentHTML('beforeend', item);
+                    });
+                }
+
+                invoices.forEach(inv => {
+                    const invDate = new Date(inv.invDate);
+                    const invDateStr = inv.invDate.split('T')[0];
+                    const amount = parseFloat(inv.totals.grandTotal.replace('₹ ', '').replace(/,/g, '')) || 0;
+
+                    if (invDateStr === today) todayTotal += amount;
+                    if (invDate.getMonth() === currentMonth && invDate.getFullYear() === currentYear) monthTotal += amount;
+                });
+
+                document.getElementById('dashTodaySales').textContent = '₹ ' + todayTotal.toLocaleString('en-IN');
+                document.getElementById('dashMonthlyRevenue').textContent = '₹ ' + monthTotal.toLocaleString('en-IN');
+
+                // Stock
+                const products = await CloudSync.fetchProducts();
+                const lowStockCount = products.filter(p => p.stock < 5).length;
+                document.getElementById('dashLowStock').textContent = lowStockCount + ' Items';
+            } catch (err) {
+                console.error('Error loading dashboard data:', err);
+            }
+        }
+
+        loadDashboardData();
 
         // Chart.js
         const ctx = document.getElementById('salesChart').getContext('2d');
