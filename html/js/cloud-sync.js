@@ -45,11 +45,22 @@ const CloudSync = {
                 const { data, error } = await supabaseClient
                     .from('metal_rates')
                     .insert([{ ...rates, user_id: 'default_user' }]);
-                if (error) throw error;
-                console.log('Rates synced to cloud');
+
+                if (error) {
+                    console.error('Supabase Rate Sync Error:', {
+                        message: error.message,
+                        details: error.details,
+                        hint: error.hint,
+                        code: error.code
+                    });
+                    throw error;
+                }
+                console.log('Rates synced to cloud successfully');
             } catch (err) {
-                console.error('Cloud sync failed:', err.message);
+                console.error('CloudSync: saveRates failed.', err);
             }
+        } else {
+            console.warn("CloudSync: Supabase client not available. Rates saved only to localStorage.");
         }
     },
 
