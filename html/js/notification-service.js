@@ -111,6 +111,9 @@ const NotificationService = {
             }
         } catch (err) {
             console.error('Email send exception:', err);
+            if (err.message.includes('Failed to fetch')) {
+                return 'failed: CORS Error - Browser blocked this call for security. (Must use backend for Resend in production)';
+            }
             return `failed: ${err.message}`;
         }
     },
@@ -158,6 +161,9 @@ const NotificationService = {
                 console.log('SMS sent successfully via Twilio');
                 return 'sent';
             } else {
+                if (response.status === 401) {
+                    return 'failed: Authentication Failed - Your Twilio Account SID or Auth Token is incorrect.';
+                }
                 const errorData = await response.json();
                 console.error('Twilio SMS Error:', errorData);
                 // Return detailed error message for UI
