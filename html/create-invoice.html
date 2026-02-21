@@ -943,8 +943,7 @@
                             updateStepStatus('step-email', 'completed', '✅');
                         } else if (emailResult.startsWith('failed')) {
                             const errorDetail = emailResult.split(': ')[1] || 'Unknown Error';
-                            updateStepStatus('step-email', 'completed', '⚠️');
-                            showToast(`Email Failed: ${errorDetail}`, 'error');
+                            updateStepStatus('step-email', 'completed', '⚠️', errorDetail);
                         } else {
                             updateStepStatus('step-email', 'completed', '⏩');
                         }
@@ -960,8 +959,7 @@
                             updateStepStatus('step-sms', 'completed', '✅');
                         } else if (smsResult.startsWith('failed')) {
                             const errorDetail = smsResult.split(': ')[1] || 'Unknown Error';
-                            updateStepStatus('step-sms', 'completed', '⚠️');
-                            showToast(`SMS Failed: ${errorDetail}`, 'error');
+                            updateStepStatus('step-sms', 'completed', '⚠️', errorDetail);
                         } else {
                             updateStepStatus('step-sms', 'completed', '⏩');
                         }
@@ -1013,6 +1011,11 @@
                 step.className = 'status-step';
                 const originalIcons = { 'step-db': '💾', 'step-pdf': '📄', 'step-upload': '☁️', 'step-email': '📧', 'step-sms': '📱' };
                 step.querySelector('.icon').textContent = originalIcons[id];
+                const errEl = step.querySelector('.error-msg');
+                if (errEl) {
+                    errEl.textContent = '';
+                    errEl.classList.add('hidden');
+                }
             });
             document.getElementById('closeStatusBtn').classList.add('hidden');
 
