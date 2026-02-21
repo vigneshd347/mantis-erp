@@ -155,7 +155,7 @@ const CloudSync = {
                 const { data, error } = await supabaseClient
                     .from('invoices')
                     .select('invNo, created_at')
-                    .order('created_at', { ascending: false })
+                    .order('invNo', { ascending: false })
                     .limit(20);
 
                 if (error) {
