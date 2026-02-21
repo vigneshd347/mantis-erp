@@ -287,9 +287,13 @@
                         </div>
                         <button onclick="window.history.back()"
                             class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition">Cancel</button>
-                        <button onclick="saveAndPrintInvoice()"
+                        <button onclick="saveAndSendInvoice()"
                             class="px-5 py-2 bg-indigo-600 text-white rounded shadow-lg hover:bg-indigo-700 transition flex items-center gap-2">
-                            <span>💾</span> Save & Print Invoice
+                            <span>💾</span> Save & Send PDF
+                        </button>
+                        <button onclick="window.print()"
+                            class="px-5 py-2 bg-gray-600 text-white rounded shadow-lg hover:bg-gray-700 transition flex items-center gap-2">
+                            <span>🖨️</span> Print
                         </button>
                     </div>
                 </div>
@@ -813,8 +817,8 @@
 
         window.onload = initPage;
 
-        // ===== SAVE & PRINT =====
-        async function saveAndPrintInvoice() {
+        // ===== SAVE & SEND PDF =====
+        async function saveAndSendInvoice() {
             // Validate required fields
             const errors = validateInvoice();
             if (errors.length > 0) {
@@ -848,11 +852,6 @@
 
             // Show Done Button (Ensure it's visible now)
             document.getElementById('closeStatusBtn').classList.remove('hidden');
-
-            // Print the invoice (Small delay to ensure no-print classes are ready)
-            setTimeout(() => {
-                window.print();
-            }, 500);
         }
 
         async function saveInvoiceWithStatus(data) {
