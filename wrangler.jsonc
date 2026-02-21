@@ -2,7 +2,7 @@
   "name": "manti-erp",
   "compatibility_date": "2024-02-21",
   "assets": {
-    "directory": "./",
+    "directory": "./html",
     "binding": "ASSETS"
   }
 }
