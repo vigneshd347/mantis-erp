@@ -149,28 +149,39 @@ const CloudSync = {
      * @returns {Promise<number>}
      */
     async getLatestInvoiceNumber() {
+        console.log('CloudSync: Fetching latest invoice number...');
         try {
             if (supabaseClient) {
                 const { data, error } = await supabaseClient
                     .from('invoices')
-                    .select('"invNo"')
+                    .select('invNo, created_at')
                     .order('created_at', { ascending: false })
-                    .limit(50); // Get recent ones to find max
+                    .limit(20);
 
-                if (error) throw error;
+                if (error) {
+                    console.error('CloudSync: Error fetching invoices for number increment:', error);
+                    throw error;
+                }
+
                 if (data && data.length > 0) {
+                    console.log('CloudSync: Recent invoices found:', data);
                     let maxNum = 0;
                     data.forEach(inv => {
                         const num = parseInt(inv.invNo.replace(/[^0-9]/g, '')) || 0;
                         if (num > maxNum) maxNum = num;
                     });
+                    console.log('CloudSync: Max invoice number found:', maxNum);
                     return maxNum;
+                } else {
+                    console.log('CloudSync: No invoices found in database.');
                 }
             }
         } catch (err) {
             console.warn('Cloud fetch latest invoice number failed:', err.message);
         }
-        return parseInt(localStorage.getItem('lastInvoiceNumber')) || 0;
+        const local = parseInt(localStorage.getItem('lastInvoiceNumber')) || 0;
+        console.log('CloudSync: Falling back to local/default:', local);
+        return local;
     },
 
     /**
