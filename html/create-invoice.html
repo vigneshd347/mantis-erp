@@ -690,23 +690,38 @@
             <div id="statusSteps">
                 <div class="status-step" id="step-db">
                     <div class="icon">💾</div>
-                    <div class="text-sm font-medium">Syncing to Database...</div>
+                    <div>
+                        <div class="text-sm font-medium">Syncing to Database...</div>
+                        <div class="error-msg text-[10px] text-red-500 mt-0.5 leading-tight hidden"></div>
+                    </div>
                 </div>
                 <div class="status-step" id="step-pdf">
                     <div class="icon">📄</div>
-                    <div class="text-sm font-medium">Generating PDF Invoice...</div>
+                    <div>
+                        <div class="text-sm font-medium">Generating PDF Invoice...</div>
+                        <div class="error-msg text-[10px] text-red-500 mt-0.5 leading-tight hidden"></div>
+                    </div>
                 </div>
                 <div class="status-step" id="step-upload">
                     <div class="icon">☁️</div>
-                    <div class="text-sm font-medium">Uploading to Cloud Storage...</div>
+                    <div>
+                        <div class="text-sm font-medium">Uploading to Cloud Storage...</div>
+                        <div class="error-msg text-[10px] text-red-500 mt-0.5 leading-tight hidden"></div>
+                    </div>
                 </div>
                 <div class="status-step" id="step-email">
                     <div class="icon">📧</div>
-                    <div class="text-sm font-medium">Sending Email Notification...</div>
+                    <div>
+                        <div class="text-sm font-medium">Sending Email Notification...</div>
+                        <div class="error-msg text-[10px] text-red-500 mt-0.5 leading-tight hidden"></div>
+                    </div>
                 </div>
                 <div class="status-step" id="step-sms">
                     <div class="icon">📱</div>
-                    <div class="text-sm font-medium">Sending SMS Notification...</div>
+                    <div>
+                        <div class="text-sm font-medium">Sending SMS Notification...</div>
+                        <div class="error-msg text-[10px] text-red-500 mt-0.5 leading-tight hidden"></div>
+                    </div>
                 </div>
             </div>
             <div class="mt-6 flex justify-center">
@@ -973,11 +988,20 @@
             }
         }
 
-        function updateStepStatus(stepId, status, icon) {
+        function updateStepStatus(stepId, status, icon, errorMsg) {
             const step = document.getElementById(stepId);
-            step.className = `status-step ${status}`;
+            if (!step) return;
+            step.className = `status-step ${status} flex items-start gap-3`;
             if (icon) {
-                step.querySelector('.icon').textContent = icon;
+                const iconEl = step.querySelector('.icon');
+                if (iconEl) iconEl.textContent = icon;
+            }
+            if (errorMsg) {
+                const errEl = step.querySelector('.error-msg');
+                if (errEl) {
+                    errEl.textContent = errorMsg;
+                    errEl.classList.remove('hidden');
+                }
             }
         }
 
