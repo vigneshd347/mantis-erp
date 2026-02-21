@@ -750,7 +750,11 @@
             return { number: lastNum, display: invNo };
         }
 
-        function initInvoiceNumber() {
+        async function initInvoiceNumber() {
+            // First check cloud for latest number
+            const latestNum = await CloudSync.getLatestInvoiceNumber();
+            localStorage.setItem('lastInvoiceNumber', latestNum);
+
             const result = getNextInvoiceNumber();
             document.getElementById('invNo').value = result.display;
 
@@ -763,7 +767,7 @@
         }
 
         async function initPage() {
-            initInvoiceNumber();
+            await initInvoiceNumber();
             loadRatesForAllRows();
             updateQRCode();
             updatePaymentUI();

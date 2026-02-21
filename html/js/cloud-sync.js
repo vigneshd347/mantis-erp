@@ -145,6 +145,35 @@ const CloudSync = {
     },
 
     /**
+     * Gets the latest invoice number from cloud
+     * @returns {Promise<number>}
+     */
+    async getLatestInvoiceNumber() {
+        try {
+            if (supabaseClient) {
+                const { data, error } = await supabaseClient
+                    .from('invoices')
+                    .select('"invNo"')
+                    .order('created_at', { ascending: false })
+                    .limit(50); // Get recent ones to find max
+
+                if (error) throw error;
+                if (data && data.length > 0) {
+                    let maxNum = 0;
+                    data.forEach(inv => {
+                        const num = parseInt(inv.invNo.replace(/[^0-9]/g, '')) || 0;
+                        if (num > maxNum) maxNum = num;
+                    });
+                    return maxNum;
+                }
+            }
+        } catch (err) {
+            console.warn('Cloud fetch latest invoice number failed:', err.message);
+        }
+        return parseInt(localStorage.getItem('lastInvoiceNumber')) || 0;
+    },
+
+    /**
      * Fetches all products
      * @returns {Promise<Array>}
      */
